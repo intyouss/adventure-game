@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid=""]
+[gd_scene load_steps=8 format=3 uid=""]
 
 [ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
 
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scenes/main/equipment_area.gd" id="4_equipment_area"]
 [ext_resource type="Script" path="res://scenes/main/chest_area.gd" id="5_chest_area"]
 [ext_resource type="Script" path="res://scenes/main/skill_inventory_panel.gd" id="6_skill_inventory_panel"]
+[ext_resource type="Script" path="res://scenes/main/shop_panel.gd" id="7_shop_panel"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -359,13 +360,31 @@ offset_bottom = 28.0
 text = "✕"
 
 [node name="ShopPanel" type="Control" parent="."]
+visible = false
 layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 60.0
-visible = false
+offset_bottom = -44.0
+script = ExtResource("7_shop_panel")
+
+[node name="Grid" type="GridContainer" parent="ShopPanel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_right = 0.95
+anchor_top = 0.1
+anchor_bottom = 0.9
+columns = 2
+
+[node name="CloseBtn" type="Button" parent="ShopPanel"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = 40.0
+offset_bottom = 28.0
+text = "✕"
 
 [node name="LeaderboardPanel" type="Control" parent="."]
 layout_mode = 1
