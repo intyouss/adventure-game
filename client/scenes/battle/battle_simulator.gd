@@ -1,5 +1,5 @@
 ﻿class_name BattleSimulator
-extends RefCounted
+extends Node
 
 class BattleUnit:
 	var max_hp: float
@@ -107,6 +107,7 @@ func tick(delta: float):
 				monster.take_damage(dmg)
 				summary.total_damage_dealt += dmg
 				wave_damage += dmg
+				AudioManager.play_sfx("player_attack")
 				break
 
 	for monster in wave.monsters:
@@ -115,6 +116,8 @@ func tick(delta: float):
 			player.take_damage(dmg)
 			summary.total_damage_taken += dmg
 			wave_damage_taken += dmg
+
+	_try_cast_skills(delta)
 
 	if _wave_cleared(wave):
 		summary.waves.append({
@@ -129,6 +132,11 @@ func tick(delta: float):
 		current_wave += 1
 		if current_wave >= waves.size():
 			_finish_battle()
+
+func _try_cast_skills(delta: float):
+	# Placeholder - skill casting with cooldowns will be implemented later
+	for skill_id in _skill_cooldowns.keys():
+		_skill_cooldowns[skill_id] = max(_skill_cooldowns[skill_id] - delta, 0.0)
 
 func _wave_cleared(wave: WaveData) -> bool:
 	for m in wave.monsters:

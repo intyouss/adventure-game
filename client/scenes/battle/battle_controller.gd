@@ -15,11 +15,12 @@ func start_stage(stage_id: String):
 	_stage_id = stage_id
 	var res = await NetworkManager.request("GET", "/api/stage/start?stage_id=" + stage_id)
 	if res.code != 0:
-		EventBus.show_message.emit("无法进入关卡: " + res.msg, true)
+		print("无法进入关卡: ", res.msg)
 		return
 
 	var cfg = res.data
 	simulator = BattleSimulator.new()
+	add_child(simulator)
 	simulator.battle_ended.connect(_on_battle_ended)
 
 	var pstats = PlayerState.character.get("stats", {})
@@ -37,10 +38,11 @@ func _update_ui():
 	if not simulator or simulator.current_wave >= simulator.waves.size():
 		return
 	var wave = simulator.waves[simulator.current_wave]
-	wave_label.text = "第 %d/5 波 %s" % [simulator.current_wave + 1, "[BOSS]" if wave.is_boss else ""]
+	var total_waves = simulator.waves.size()
+	wave_label.text = "第 %d/%d 波 %s" % [simulator.current_wave + 1, total_waves, "[BOSS]" if wave.is_boss else ""]
 	damage_label.text = "伤害: %.0f" % simulator.summary.total_damage_dealt
 	time_label.text = "%.1fs" % (simulator.elapsed_time)
-	progress_bar.value = float(simulator.current_wave) / 5.0
+	progress_bar.value = float(simulator.current_wave) / float(max(total_waves, 1))
 
 func _on_battle_ended(summary):
 	is_battle_active = false

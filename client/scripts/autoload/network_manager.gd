@@ -12,9 +12,11 @@ signal token_expired
 signal ws_message_received(type: String, payload: Dictionary)
 signal ws_connected
 signal ws_disconnected
+signal auto_login_success
 
 func _ready():
 	_load_tokens()
+	_try_auto_login()
 
 func _process(_delta):
 	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
@@ -25,6 +27,28 @@ func _process(_delta):
 			var json = JSON.parse_string(text)
 			if json:
 				ws_message_received.emit(json.get("type", ""), json.get("payload", {}))
+
+func _try_auto_login():
+	if refresh_token:
+		var ok = await _silent_refresh()
+		if ok:
+			auto_login_success.emit()
+
+func _silent_refresh() -> bool:
+	var http = HTTPRequest.new()
+	add_child(http)
+	http.request(BASE_URL + "/api/auth/refresh", ["Content-Type: application/json"], HTTPClient.METHOD_POST,
+		JSON.stringify({"refresh_token": refresh_token}))
+	var result = await http.request_completed
+	http.queue_free()
+
+	var json = JSON.parse_string(result[3].get_string_from_utf8())
+	if json and json.code == 0:
+		access_token = json.data.access_token
+		refresh_token = json.data.refresh_token
+		_save_tokens()
+		return true
+	return false
 
 func _load_tokens():
 	var f = FileAccess.open("user://tokens.json", FileAccess.READ)

@@ -7,6 +7,7 @@ var skills: Array = []
 var skill_slots: Dictionary = {}
 var chest_count: int = 0
 var zone_level: int = 1
+var shop_level: int = 1
 var stage_chapter: int = 1
 var stage_level: int = 1
 

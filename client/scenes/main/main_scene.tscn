@@ -1,0 +1,59 @@
+﻿[gd_scene load_steps=2 format=3 uid=""]
+
+[ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+script = ExtResource("1_main_ui")
+
+[node name="HUD" type="Control" parent="."]
+layout_mode = 1
+offset_right = 1152.0
+offset_bottom = 60.0
+
+[node name="LevelLabel" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 100.0
+offset_bottom = 36.0
+text = "Lv.1"
+
+[node name="ExpBar" type="ProgressBar" parent="HUD"]
+layout_mode = 0
+offset_left = 120.0
+offset_top = 10.0
+offset_right = 300.0
+offset_bottom = 36.0
+
+[node name="GoldLabel" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 310.0
+offset_top = 10.0
+offset_right = 450.0
+offset_bottom = 36.0
+text = "💰 0"
+
+[node name="TicketLabel" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 460.0
+offset_top = 10.0
+offset_right = 600.0
+offset_bottom = 36.0
+text = "🎫 0"
+
+[node name="CPLabel" type="Label" parent="HUD"]
+layout_mode = 0
+offset_left = 610.0
+offset_top = 10.0
+offset_right = 750.0
+offset_bottom = 36.0
+text = "CP 0"
+
+[node name="TabContainer" type="TabContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 60.0
