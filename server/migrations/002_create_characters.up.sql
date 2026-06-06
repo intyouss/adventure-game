@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS characters (
+CREATE TABLE IF NOT EXISTS characters (
     id            BIGSERIAL PRIMARY KEY,
     account_id    BIGINT UNIQUE NOT NULL REFERENCES accounts(id),
     class         VARCHAR(20) NOT NULL DEFAULT 'warrior',

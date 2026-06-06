@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -63,4 +64,20 @@ func (h *StageHandler) ClaimRewards(c *gin.Context) {
 		return
 	}
 	response.OK(c, rewards)
+}
+
+// GetChapterStages handles GET /api/stage/config?chapter=1
+func (h *StageHandler) GetChapterStages(c *gin.Context) {
+	chapterStr := c.DefaultQuery("chapter", "1")
+	chapter, err := strconv.Atoi(chapterStr)
+	if err != nil || chapter < 1 {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, "invalid chapter")
+		return
+	}
+	stages, err := h.svc.GetChapterStages(c.Request.Context(), chapter)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+	response.OK(c, stages)
 }

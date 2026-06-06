@@ -1,0 +1,13 @@
+# Godot
+*.uid
+.import/
+.godot/
+*.import
+
+# Go build
+server/adventure-server
+
+# IDE
+.idea/
+*.swp
+*.swo

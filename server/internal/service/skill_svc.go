@@ -179,16 +179,19 @@ func (s *SkillService) ListSkills(ctx context.Context, charID int64) ([]model.Sk
 		return nil, fmt.Errorf("get skills data: %w", err)
 	}
 
-	var skills map[string]model.Skill
+	// Try array format first, then map format
+	var skills []model.Skill
 	if err := json.Unmarshal([]byte(skillsJSON), &skills); err != nil {
-		return nil, fmt.Errorf("parse skills: %w", err)
+		// Fallback: try map format
+		var skillsMap map[string]model.Skill
+		if err2 := json.Unmarshal([]byte(skillsJSON), &skillsMap); err2 != nil {
+			return nil, fmt.Errorf("parse skills: %w", err)
+		}
+		for _, sk := range skillsMap {
+			skills = append(skills, sk)
+		}
 	}
-
-	result := make([]model.Skill, 0, len(skills))
-	for _, sk := range skills {
-		result = append(result, sk)
-	}
-	return result, nil
+	return skills, nil
 }
 
 // GetEquippedSkills returns the equipped skill slots as an array [id1, id2, id3, id4].

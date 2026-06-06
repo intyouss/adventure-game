@@ -154,6 +154,7 @@ func main() {
 		stage.GET("/start", stageHandler.GetStageConfig)
 		stage.GET("/progress", stageHandler.GetProgress)
 		stage.POST("/complete", stageHandler.ClaimRewards)
+		stage.GET("/config", stageHandler.GetChapterStages)
 	}
 
 	// Leaderboard routes

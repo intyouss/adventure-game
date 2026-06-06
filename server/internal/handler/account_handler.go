@@ -21,14 +21,23 @@ func NewAccountHandler(svc *service.AccountService) *AccountHandler {
 // SendCode handles POST /api/auth/send_code
 func (h *AccountHandler) SendCode(c *gin.Context) {
 	var req struct {
-		Target string `json:"target" binding:"required"`
+		Phone string `json:"phone"`
+		Email string `json:"email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
 		return
 	}
+	target := req.Phone
+	if target == "" {
+		target = req.Email
+	}
+	if target == "" {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, "phone or email required")
+		return
+	}
 
-	if err := h.svc.SendVerificationCode(c.Request.Context(), req.Target); err != nil {
+	if err := h.svc.SendVerificationCode(c.Request.Context(), target); err != nil {
 		if err.Error() == "send code too frequent" {
 			response.Error(c, http.StatusTooManyRequests, errcode.ErrSendTooFrequent, errcode.Msg(errcode.ErrSendTooFrequent))
 			return

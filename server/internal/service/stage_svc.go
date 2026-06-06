@@ -35,6 +35,15 @@ func parseStageID(stageID string) (int, int, error) {
 	return chapter, level, nil
 }
 
+// GetChapterStages returns configs for all 10 levels in a chapter.
+func (s *StageService) GetChapterStages(ctx context.Context, chapter int) ([]model.StageConfig, error) {
+	var stages []model.StageConfig
+	for level := 1; level <= 10; level++ {
+		stages = append(stages, model.GenerateStageConfig(chapter, level))
+	}
+	return stages, nil
+}
+
 // GetStageConfig returns the stage config if the player has unlocked it.
 func (s *StageService) GetStageConfig(ctx context.Context, charID int64, stageID string) (*model.StageConfig, error) {
 	chapter, level, err := parseStageID(stageID)

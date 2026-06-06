@@ -16,7 +16,10 @@ func NewLeaderboardService(rdb *redis.Client) *LeaderboardService {
 	return &LeaderboardService{rdb: rdb}
 }
 
-func (s *LeaderboardService) leaderboardKey() string {
+func (s *LeaderboardService) leaderboardKey(chapter int) string {
+	if chapter > 0 {
+		return fmt.Sprintf("leaderboard:chapter:%d", chapter)
+	}
 	return "leaderboard:global"
 }
 
@@ -35,14 +38,14 @@ type RankingEntry struct {
 // Score = chapter * 1000 + stage_level
 func (s *LeaderboardService) UpdateScore(ctx context.Context, charID int64, chapter, level int) error {
 	score := float64(chapter*1000 + level)
-	return s.rdb.ZAdd(ctx, s.leaderboardKey(), redis.Z{
+	return s.rdb.ZAdd(ctx, s.leaderboardKey(0), redis.Z{
 		Score:  score,
 		Member: strconv.FormatInt(charID, 10),
 	}).Err()
 }
 
 // GetTopN returns the top N players with pagination.
-func (s *LeaderboardService) GetTopN(ctx context.Context, page, size int) ([]RankingEntry, int64, error) {
+func (s *LeaderboardService) GetTopN(ctx context.Context, page, size, chapter int) ([]RankingEntry, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -50,15 +53,16 @@ func (s *LeaderboardService) GetTopN(ctx context.Context, page, size int) ([]Ran
 		size = 50
 	}
 
+	key := s.leaderboardKey(chapter)
 	start := int64((page - 1) * size)
 	stop := start + int64(size) - 1
 
-	results, err := s.rdb.ZRevRangeWithScores(ctx, s.leaderboardKey(), start, stop).Result()
+	results, err := s.rdb.ZRevRangeWithScores(ctx, key, start, stop).Result()
 	if err != nil {
 		return nil, 0, fmt.Errorf("zrevrange: %w", err)
 	}
 
-	total, err := s.rdb.ZCard(ctx, s.leaderboardKey()).Result()
+	total, err := s.rdb.ZCard(ctx, key).Result()
 	if err != nil {
 		return nil, 0, fmt.Errorf("zcard: %w", err)
 	}
@@ -82,7 +86,7 @@ func (s *LeaderboardService) GetTopN(ctx context.Context, page, size int) ([]Ran
 
 // GetRank returns a player's rank (1-based) globally.
 func (s *LeaderboardService) GetRank(ctx context.Context, charID int64) (int64, error) {
-	rank, err := s.rdb.ZRevRank(ctx, s.leaderboardKey(), strconv.FormatInt(charID, 10)).Result()
+	rank, err := s.rdb.ZRevRank(ctx, s.leaderboardKey(0), strconv.FormatInt(charID, 10)).Result()
 	if err == redis.Nil {
 		return 0, nil
 	}

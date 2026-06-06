@@ -19,12 +19,17 @@ func NewLeaderboardHandler(svc *service.LeaderboardService) *LeaderboardHandler 
 	return &LeaderboardHandler{svc: svc}
 }
 
-// GetTop handles GET /api/leaderboard?page=1&size=50
+// GetTop handles GET /api/leaderboard?page=1&size=50&chapter=1
 func (h *LeaderboardHandler) GetTop(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	size, _ := strconv.Atoi(c.DefaultQuery("size", "50"))
+	pageStr := c.DefaultQuery("page", "1")
+	sizeStr := c.DefaultQuery("size", "50")
+	chapterStr := c.DefaultQuery("chapter", "0")
 
-	rankings, total, err := h.svc.GetTopN(c.Request.Context(), page, size)
+	page, _ := strconv.Atoi(pageStr)
+	size, _ := strconv.Atoi(sizeStr)
+	chapter, _ := strconv.Atoi(chapterStr)
+
+	rankings, total, err := h.svc.GetTopN(c.Request.Context(), page, size, chapter)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
 		return
