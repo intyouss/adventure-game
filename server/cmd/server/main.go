@@ -27,6 +27,11 @@ func main() {
 	}
 	defer db.Close()
 
+	if err := database.RunMigrations(db, "migrations"); err != nil {
+		slog.Error("run migrations", "error", err)
+		os.Exit(1)
+	}
+
 	rdb, err := database.NewRedis(cfg.Redis)
 	if err != nil {
 		slog.Error("connect redis", "error", err)
