@@ -52,6 +52,10 @@ func main() {
 	characterSvc := service.NewCharacterService(characterRepo)
 	characterHandler := handler.NewCharacterHandler(characterSvc)
 
+	equipRepo := repository.NewEquipmentRepo(db)
+	equipSvc := service.NewEquipmentService(equipRepo)
+	equipHandler := handler.NewEquipmentHandler(equipSvc)
+
 	// --- Router ---
 	r := gin.New()
 	r.Use(middleware.Recovery())
@@ -85,6 +89,8 @@ func main() {
 	protected := r.Group("/api")
 	{
 		protected.GET("/character", characterHandler.GetCharacter)
+		protected.GET("/equipment", equipHandler.GetEquipment)
+		protected.POST("/equipment/decompose", equipHandler.Decompose)
 	}
 
 	slog.Info("server starting", "port", cfg.Server.Port)
