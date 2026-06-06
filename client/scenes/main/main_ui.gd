@@ -28,9 +28,11 @@ func _ready():
 	_enter_mode(Mode.NORMAL)
 
 func _on_mode_changed(new_mode: int):
+	print("=== MODE CHANGED: ", new_mode, " ===")
 	_enter_mode(new_mode)
 
 func _enter_mode(mode: int):
+	print("=== ENTER MODE: ", mode, " ===")
 	_mode = mode
 	match mode:
 		Mode.NORMAL:
