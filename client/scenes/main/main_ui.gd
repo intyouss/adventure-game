@@ -24,8 +24,11 @@ func _ready():
 	EventBus.auto_login_success.connect(_refresh_hud)
 	bottom_row.mode_changed.connect(_on_mode_changed)
 	bottom_row.leaderboard_btn.pressed.connect(_on_leaderboard_toggle)
-	_refresh_hud()
 	_enter_mode(Mode.NORMAL)
+	_refresh_hud_async()
+
+func _refresh_hud_async():
+	await _refresh_hud()
 
 func _on_mode_changed(new_mode: int):
 	_enter_mode(new_mode)
