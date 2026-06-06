@@ -1,8 +1,8 @@
-﻿server:
+server:
   port: 8080
 
 database:
-  host: localhost
+  host: postgres
   port: 5432
   user: adventurer
   password: adventurer_dev
@@ -10,7 +10,7 @@ database:
   sslmode: disable
 
 redis:
-  addr: localhost:6379
+  addr: redis:6379
   password: ""
   db: 0
 

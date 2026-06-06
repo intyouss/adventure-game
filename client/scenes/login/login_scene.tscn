@@ -1,0 +1,77 @@
+[gd_scene load_steps=2 format=3 uid="uid://login_main"]
+
+[ext_resource type="Script" path="res://scenes/login/login_ui.gd" id="1_login_ui"]
+
+[node name="root" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_login_ui")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -200.0
+offset_right = 150.0
+offset_bottom = 200.0
+
+[node name="TabPhone" type="Button" parent="VBox"]
+layout_mode = 2
+text = "手机号"
+
+[node name="TabEmail" type="Button" parent="VBox"]
+layout_mode = 2
+text = "邮箱"
+
+[node name="PhoneInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "手机号"
+
+[node name="EmailInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "邮箱"
+visible = false
+
+[node name="NicknameInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "昵称"
+visible = false
+
+[node name="CodeInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "验证码"
+
+[node name="SendCodeBtn" type="Button" parent="VBox"]
+layout_mode = 2
+text = "发送验证码"
+
+[node name="PasswordInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "密码"
+secret = true
+
+[node name="LoginBtn" type="Button" parent="VBox"]
+layout_mode = 2
+text = "登录"
+
+[node name="RegisterBtn" type="Button" parent="VBox"]
+layout_mode = 2
+text = "注册"
+
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_bottom = -50.0
+offset_right = 150.0
+text = ""
+horizontal_alignment = 1

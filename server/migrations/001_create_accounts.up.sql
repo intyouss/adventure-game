@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS accounts (
+CREATE TABLE IF NOT EXISTS accounts (
     id            BIGSERIAL PRIMARY KEY,
     phone         VARCHAR(20),
     email         VARCHAR(255),

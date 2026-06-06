@@ -78,13 +78,21 @@ func request(method: String, path: String, body: Dictionary = {}) -> Dictionary:
 	var http = HTTPRequest.new()
 	add_child(http)
 
+	var http_method: HTTPClient.Method
+	match method:
+		"GET": http_method = HTTPClient.METHOD_GET
+		"POST": http_method = HTTPClient.METHOD_POST
+		"PUT": http_method = HTTPClient.METHOD_PUT
+		"DELETE": http_method = HTTPClient.METHOD_DELETE
+		_: http_method = HTTPClient.METHOD_GET
+
 	var headers = [
 		"Content-Type: application/json"
 	]
 	if access_token:
 		headers.append("Authorization: Bearer " + access_token)
 
-	var err = http.request(BASE_URL + path, headers, method, JSON.stringify(body))
+	var err = http.request(BASE_URL + path, headers, http_method, JSON.stringify(body))
 	if err != OK:
 		http.queue_free()
 		return {"code": -1, "msg": "request failed"}
