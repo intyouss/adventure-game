@@ -8,7 +8,7 @@ enum Mode { NORMAL, SKILL_INVENTORY, SHOP }
 @onready var shop_btn = $ShopBtn
 @onready var leaderboard_btn = $LeaderboardBtn
 
-var _current_mode: Mode = Mode.NORMAL
+var _current_mode: int = 0
 
 func _ready():
 	skill_btn.pressed.connect(_on_skill_pressed)
@@ -36,7 +36,7 @@ func _on_shop_pressed():
 func _on_leaderboard_pressed():
 	pass  # Handled by main_ui via direct connection
 
-func set_active_mode(mode: Mode):
+func set_active_mode(mode: int):
 	_current_mode = mode
 	_update_highlight()
 

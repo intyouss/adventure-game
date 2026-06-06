@@ -17,7 +17,7 @@ enum Mode { NORMAL, SKILL_INVENTORY, SHOP }
 @onready var ticket_label = $HUD/TicketLabel
 @onready var cp_label = $HUD/CPLabel
 
-var _mode: Mode = Mode.NORMAL
+var _mode: int = 0
 
 func _ready():
 	EventBus.login_success.connect(_refresh_hud)
@@ -27,10 +27,10 @@ func _ready():
 	_refresh_hud()
 	_enter_mode(Mode.NORMAL)
 
-func _on_mode_changed(new_mode: Mode):
+func _on_mode_changed(new_mode: int):
 	_enter_mode(new_mode)
 
-func _enter_mode(mode: Mode):
+func _enter_mode(mode: int):
 	_mode = mode
 	match mode:
 		Mode.NORMAL:
