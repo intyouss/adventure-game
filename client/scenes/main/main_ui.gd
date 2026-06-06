@@ -73,7 +73,3 @@ func _refresh_hud():
 	gold_label.text = "💰 %d" % c.get("gold", 0)
 	ticket_label.text = "🎫 %d" % c.get("skill_tickets", 0)
 	cp_label.text = "CP %.0f" % c.get("cp", 0)
-
-func _input(event):
-	if event is InputEventMouseButton and event.pressed:
-	
