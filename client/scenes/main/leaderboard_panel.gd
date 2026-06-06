@@ -71,7 +71,11 @@ func _load_rankings(append: bool):
 
 	var res = await NetworkManager.request("GET", "/api/leaderboard?page=%d&size=%d&chapter=%d" % [_current_page, _page_size, _current_chapter])
 	if res.code == 0:
-		var rankings = res.data.get("rankings", res.data if res.data is Array else [])
+		var rankings = []
+		if res.data is Array:
+			rankings = res.data
+		else:
+			rankings = res.data.get("rankings", [])
 		_has_more = rankings.size() >= _page_size
 		for entry in rankings:
 			var rank = entry.get("rank", "?")
