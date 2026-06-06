@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -27,7 +28,7 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := database.RunMigrations(db, "migrations"); err != nil {
+	if err := database.RunMigrations(context.Background(), db, "migrations"); err != nil {
 		slog.Error("run migrations", "error", err)
 		os.Exit(1)
 	}

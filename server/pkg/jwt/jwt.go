@@ -1,4 +1,4 @@
-﻿package jwt
+package jwt
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func Generate(secret string, accountID, characterID int64, ttlSeconds int) (stri
 		AccountID:   accountID,
 		CharacterID: characterID,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
 	return token.SignedString([]byte(secret))
 }
 
@@ -44,7 +44,7 @@ func Parse(secret, tokenStr string) (*Claims, error) {
 	}
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
-		return nil, fmt.Errorf("invalid token claims")
+		return nil, fmt.Errorf("claims type assertion failed")
 	}
 	return claims, nil
 }

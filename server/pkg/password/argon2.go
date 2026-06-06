@@ -1,4 +1,4 @@
-﻿package password
+package password
 
 import (
 	"crypto/rand"
@@ -43,6 +43,9 @@ func Hash(password string) (string, error) {
 func Verify(password, encodedHash string) bool {
 	parts := strings.Split(encodedHash, "$")
 	if len(parts) != 6 {
+		return false
+	}
+	if parts[1] != "argon2id" || parts[2] != "v=19" {
 		return false
 	}
 	var memory uint32
