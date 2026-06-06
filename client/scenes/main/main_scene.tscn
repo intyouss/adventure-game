@@ -1,10 +1,12 @@
-[gd_scene load_steps=4 format=3 uid=""]
+[gd_scene load_steps=5 format=3 uid=""]
 
 [ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
 
 [ext_resource type="Script" path="res://scenes/main/bottom_button_row.gd" id="2_bottom_button_row"]
 
 [ext_resource type="Script" path="res://scenes/main/battle_area.gd" id="3_battle_area"]
+
+[ext_resource type="Script" path="res://scenes/main/equipment_area.gd" id="4_equipment_area"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -120,11 +122,87 @@ text = "+"
 
 [node name="EquipmentArea" type="Control" parent="."]
 layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
 offset_top = 280.0
 offset_bottom = 420.0
+offset_right = 1152.0
+script = ExtResource("4_equipment_area")
+
+[node name="SlotGrid" type="GridContainer" parent="EquipmentArea"]
+layout_mode = 1
+offset_top = 4.0
+offset_right = 1152.0
+offset_bottom = 136.0
+columns = 5
+
+[node name="weapon" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "武器
+[空]"
+
+[node name="helmet" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "头盔
+[空]"
+
+[node name="armor" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "铠甲
+[空]"
+
+[node name="shoes" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "鞋子
+[空]"
+
+[node name="ring1" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "戒指1
+[空]"
+
+[node name="ring2" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "戒指2
+[空]"
+
+[node name="necklace" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "项链
+[空]"
+
+[node name="bracer" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "护腕
+[空]"
+
+[node name="belt" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "腰带
+[空]"
+
+[node name="gloves" type="Button" parent="EquipmentArea/SlotGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "手套
+[空]"
 
 [node name="ChestArea" type="Control" parent="."]
 layout_mode = 1
