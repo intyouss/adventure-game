@@ -345,42 +345,14 @@ offset_right = 292.0
 offset_bottom = 210.0
 text = "替换新装备"
 
-[node name="BottomButtonRow" type="HBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -44.0
-script = ExtResource("2_bottom_button_row")
-
-[node name="SkillBtn" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "📋 技能仓库"
-
-[node name="ShopBtn" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "🏪 商店"
-
-[node name="LeaderboardBtn" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 3
-custom_minimum_size = Vector2(48, 0)
-text = "🏆"
-
 [node name="SkillInventoryPanel" type="Control" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
-anchor_bottom = 1.0
 offset_top = 60.0
-offset_bottom = -44.0
+offset_bottom = 470.0
+offset_right = 1152.0
 script = ExtResource("6_skill_inventory_panel")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="SkillInventoryPanel"]
@@ -407,11 +379,11 @@ text = "✕"
 [node name="ShopPanel" type="Control" parent="."]
 visible = false
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
 anchor_right = 1.0
-anchor_bottom = 1.0
 offset_top = 60.0
-offset_bottom = -44.0
+offset_bottom = 470.0
+offset_right = 1152.0
 script = ExtResource("7_shop_panel")
 
 [node name="Grid" type="GridContainer" parent="ShopPanel"]
@@ -489,3 +461,32 @@ offset_right = 292.0
 offset_top = -36.0
 text = "加载更多"
 visible = false
+
+[node name="BottomButtonRow" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0
+anchor_right = 1.0
+offset_top = 470.0
+offset_bottom = 514.0
+offset_right = 1152.0
+script = ExtResource("2_bottom_button_row")
+
+[node name="SkillBtn" type="Button" parent="BottomButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "📋 技能仓库"
+
+[node name="ShopBtn" type="Button" parent="BottomButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "🏪 商店"
+
+[node name="LeaderboardBtn" type="Button" parent="BottomButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+custom_minimum_size = Vector2(48, 0)
+text = "🏆"
