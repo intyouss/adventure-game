@@ -76,4 +76,4 @@ func _refresh_hud():
 
 func _input(event):
 	if event is InputEventMouseButton and event.pressed:
-		print("=== MAIN CLICK at: ", event.position, " btn_idx=", event.button_index)
+	
