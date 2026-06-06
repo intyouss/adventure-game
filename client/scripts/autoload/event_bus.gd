@@ -10,5 +10,7 @@ signal level_up(new_level: int)
 signal item_obtained(item: Dictionary)
 signal gold_changed(new_amount: int)
 signal skill_tickets_changed(new_amount: int)
+@warning_ignore("unused_signal")
 signal inventory_changed
+@warning_ignore("unused_signal")
 signal skill_updated
