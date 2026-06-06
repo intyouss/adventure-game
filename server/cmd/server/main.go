@@ -56,6 +56,10 @@ func main() {
 	equipSvc := service.NewEquipmentService(equipRepo)
 	equipHandler := handler.NewEquipmentHandler(equipSvc)
 
+	skillRepo := repository.NewSkillRepo(db)
+	skillSvc := service.NewSkillService(skillRepo, characterRepo)
+	skillHandler := handler.NewSkillHandler(skillSvc)
+
 	// --- Router ---
 	r := gin.New()
 	r.Use(middleware.Recovery())
@@ -91,6 +95,8 @@ func main() {
 		protected.GET("/character", characterHandler.GetCharacter)
 		protected.GET("/equipment", equipHandler.GetEquipment)
 		protected.POST("/equipment/decompose", equipHandler.Decompose)
+		protected.POST("/skill/gacha", skillHandler.Gacha)
+		protected.POST("/skill/slot", skillHandler.SetSkillSlot)
 	}
 
 	slog.Info("server starting", "port", cfg.Server.Port)
