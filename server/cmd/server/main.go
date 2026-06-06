@@ -1,6 +1,7 @@
-package main
+﻿package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -51,7 +52,7 @@ func main() {
 	})
 
 	slog.Info("server starting", "port", cfg.Server.Port)
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(fmt.Sprintf(":%d", cfg.Server.Port)); err != nil {
 		slog.Error("server failed", "error", err)
 		os.Exit(1)
 	}
