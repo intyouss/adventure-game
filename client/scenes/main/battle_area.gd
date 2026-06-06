@@ -88,8 +88,8 @@ func _refresh_skill_slots():
 	for i in range(1, 5):
 		var slot = _slots[i]
 		if i - 1 < equipped.size() and equipped[i - 1] != null and equipped[i - 1] != "":
-			var name = _find_skill_name(str(equipped[i - 1]))
-			slot.text = name if name != "" else "?"
+			var skill_name = _find_skill_name(str(equipped[i - 1]))
+			slot.text = skill_name if skill_name != "" else "?"
 			slot.modulate = Color.WHITE
 		else:
 			slot.text = "+"
