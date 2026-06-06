@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid=""]
+[gd_scene load_steps=6 format=3 uid=""]
 
 [ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
 
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scenes/main/battle_area.gd" id="3_battle_area"]
 
 [ext_resource type="Script" path="res://scenes/main/equipment_area.gd" id="4_equipment_area"]
+[ext_resource type="Script" path="res://scenes/main/chest_area.gd" id="5_chest_area"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -206,11 +207,100 @@ text = "手套
 
 [node name="ChestArea" type="Control" parent="."]
 layout_mode = 1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 1.0
 offset_top = 420.0
 offset_bottom = 470.0
+offset_right = 1152.0
+script = ExtResource("5_chest_area")
+
+[node name="ChestCount" type="Label" parent="ChestArea"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 120.0
+offset_bottom = 34.0
+text = "箱子: 0"
+
+[node name="ZoneLabel" type="Label" parent="ChestArea"]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 8.0
+offset_right = 240.0
+offset_bottom = 34.0
+text = "区域Lv.1"
+
+[node name="QuantitySelector" type="OptionButton" parent="ChestArea"]
+layout_mode = 0
+offset_left = 250.0
+offset_top = 8.0
+offset_right = 320.0
+offset_bottom = 34.0
+
+[node name="OpenBtn" type="Button" parent="ChestArea"]
+layout_mode = 0
+offset_left = 330.0
+offset_top = 8.0
+offset_right = 400.0
+offset_bottom = 34.0
+text = "开箱"
+
+[node name="UpgradeBtn" type="Button" parent="ChestArea"]
+layout_mode = 0
+offset_left = 410.0
+offset_top = 8.0
+offset_right = 480.0
+offset_bottom = 34.0
+text = "升级"
+
+[node name="ComparePopup" type="Panel" parent="ChestArea"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -120.0
+offset_right = 150.0
+offset_bottom = 120.0
+visible = false
+
+[node name="Title" type="Label" parent="ChestArea/ComparePopup"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 292.0
+offset_bottom = 30.0
+text = "获得装备"
+
+[node name="NewItemStats" type="Label" parent="ChestArea/ComparePopup"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 34.0
+offset_right = 292.0
+offset_bottom = 110.0
+
+[node name="CurrentItemStats" type="Label" parent="ChestArea/ComparePopup"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 114.0
+offset_right = 292.0
+offset_bottom = 170.0
+
+[node name="KeepBtn" type="Button" parent="ChestArea/ComparePopup"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 178.0
+offset_right = 142.0
+offset_bottom = 210.0
+text = "保留原装备"
+
+[node name="ReplaceBtn" type="Button" parent="ChestArea/ComparePopup"]
+layout_mode = 0
+offset_left = 158.0
+offset_top = 178.0
+offset_right = 292.0
+offset_bottom = 210.0
+text = "替换新装备"
 
 [node name="BottomButtonRow" type="Control" parent="."]
 layout_mode = 1
