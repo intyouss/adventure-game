@@ -18,6 +18,11 @@ func _refresh():
 		var btn = slot_grid.get_node_or_null(slot_name)
 		if not btn or not btn is Button:
 			continue
+		# Disconnect previous signals to avoid duplicates
+		if btn.pressed.is_connected(_on_unequip):
+			btn.pressed.disconnect(_on_unequip)
+		btn.pressed.connect(_on_unequip.bind(slot_name))
+
 		if equip_uid != "" and equip_uid != null:
 			var found = _find_item_by_uid(equip_uid)
 			if not found.is_empty():
@@ -30,9 +35,6 @@ func _refresh():
 		else:
 			btn.text = "%s\n[空]" % SLOT_NAMES.get(slot_name, slot_name)
 			btn.modulate = Color.WHITE
-
-		var slot_name_for_connect = slot_name
-		btn.pressed.connect(func(): _on_unequip(slot_name_for_connect))
 
 func _on_unequip(slot_name: String):
 	var equip_uid = PlayerState.equipped.get(slot_name, "")

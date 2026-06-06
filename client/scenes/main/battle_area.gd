@@ -32,7 +32,7 @@ func _setup_chapter_tabs():
 		btn.text = "第%d章" % ch
 		btn.toggle_mode = true
 		var chapter = ch
-		btn.pressed.connect(func(): _switch_chapter(chapter))
+		btn.pressed.connect(_switch_chapter.bind(chapter))
 		chapter_tabs.add_child(btn)
 		if ch == 1:
 			btn.button_pressed = true
@@ -65,8 +65,7 @@ func _load_stages():
 		var btn = Button.new()
 		btn.text = stage_id
 		btn.disabled = not unlocked
-		var sid = stage_id
-		btn.pressed.connect(func(): _start_battle(sid))
+		btn.pressed.connect(_start_battle.bind(stage_id))
 		battle_scene.add_child(btn)
 
 func _is_unlocked(level: int) -> bool:

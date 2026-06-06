@@ -22,7 +22,7 @@ func _refresh():
 		btn.text = "%s\nLv.%d" % [model.name, model.level]
 		btn.modulate = model.get_quality_color()
 		var idx = i
-		btn.pressed.connect(func(): _on_skill_selected(idx))
+		btn.pressed.connect(_on_skill_selected.bind(idx))
 		grid.add_child(btn)
 		_slot_buttons.append(btn)
 

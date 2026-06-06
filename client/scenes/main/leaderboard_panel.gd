@@ -33,7 +33,7 @@ func _setup_chapter_tabs():
 		btn.text = "第%d章" % ch
 		btn.toggle_mode = true
 		var chapter = ch
-		btn.pressed.connect(func(): _switch_chapter(chapter))
+		btn.pressed.connect(_switch_chapter.bind(chapter))
 		chapter_tabs.add_child(btn)
 		if ch == 1:
 			btn.button_pressed = true
