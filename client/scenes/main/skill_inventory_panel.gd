@@ -50,4 +50,8 @@ func _on_skill_selected(index: int):
 		EventBus.skill_updated.emit()
 
 func _on_close():
-	hide()
+	var parent = get_parent()
+	if parent and parent.has_method("_enter_mode"):
+		parent._enter_mode(0)  # Mode.NORMAL = 0
+	else:
+		hide()

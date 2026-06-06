@@ -29,4 +29,8 @@ func _open_skill_shop():
 	add_child(skill_scene)
 
 func _on_close():
-	hide()
+	var parent = get_parent()
+	if parent and parent.has_method("_enter_mode"):
+		parent._enter_mode(0)  # Mode.NORMAL = 0
+	else:
+		hide()

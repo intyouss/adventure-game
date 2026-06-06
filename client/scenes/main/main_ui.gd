@@ -23,6 +23,7 @@ func _ready():
 	EventBus.login_success.connect(_refresh_hud)
 	EventBus.auto_login_success.connect(_refresh_hud)
 	bottom_row.mode_changed.connect(_on_mode_changed)
+	bottom_row.leaderboard_btn.pressed.connect(_on_leaderboard_toggle)
 	_refresh_hud()
 	_enter_mode(Mode.NORMAL)
 
@@ -51,6 +52,12 @@ func _enter_mode(mode: Mode):
 			skill_inventory_panel.visible = false
 			shop_panel.visible = true
 	bottom_row.set_active_mode(mode)
+
+func _on_leaderboard_toggle():
+	if leaderboard_panel._is_open:
+		leaderboard_panel._collapse()
+	else:
+		leaderboard_panel.open_panel()
 
 func _refresh_hud():
 	await PlayerState.load_all()
