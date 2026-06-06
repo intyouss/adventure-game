@@ -48,6 +48,10 @@ func main() {
 	accountSvc := service.NewAccountService(accountRepo, rdb, cfg.JWT)
 	accountHandler := handler.NewAccountHandler(accountSvc)
 
+	characterRepo := repository.NewCharacterRepo(db)
+	characterSvc := service.NewCharacterService(characterRepo)
+	characterHandler := handler.NewCharacterHandler(characterSvc)
+
 	// --- Router ---
 	r := gin.New()
 	r.Use(middleware.Recovery())
@@ -77,6 +81,11 @@ func main() {
 
 	// JWT auth middleware for protected routes
 	r.Use(middleware.Auth(cfg.JWT))
+
+	protected := r.Group("/api")
+	{
+		protected.GET("/character", characterHandler.GetCharacter)
+	}
 
 	slog.Info("server starting", "port", cfg.Server.Port)
 	if err := r.Run(fmt.Sprintf(":%d", cfg.Server.Port)); err != nil {
