@@ -20,12 +20,15 @@ func _ready():
 	_refresh()
 
 func open_panel():
+	visible = true
 	_is_open = true
 	anim_player.play("slide_in")
 
 func _collapse():
 	_is_open = false
 	anim_player.play("slide_out")
+	await anim_player.animation_finished
+	visible = false
 
 func _setup_chapter_tabs():
 	for ch in range(1, 11):
