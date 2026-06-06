@@ -11,6 +11,7 @@ enum Mode { NORMAL, SKILL_INVENTORY, SHOP }
 var _current_mode: int = 0
 
 func _ready():
+	print("=== BottomButtonRow _ready, skill_btn=", skill_btn, " shop_btn=", shop_btn, " lb_btn=", leaderboard_btn)
 	skill_btn.pressed.connect(_on_skill_pressed)
 	shop_btn.pressed.connect(_on_shop_pressed)
 	leaderboard_btn.pressed.connect(_on_leaderboard_pressed)
