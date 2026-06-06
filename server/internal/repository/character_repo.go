@@ -18,19 +18,19 @@ func NewCharacterRepo(db *sql.DB) *CharacterRepo {
 
 func (r *CharacterRepo) Create(ctx context.Context, c *model.Character) error {
 	return r.db.QueryRowContext(ctx,
-		`INSERT INTO characters (account_id, class, nickname, level, exp, gold, skill_tickets)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`INSERT INTO characters (account_id, class, nickname, level, exp, gold, skill_tickets, chest_count, zone_level)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		 RETURNING id, created_at, updated_at`,
-		c.AccountID, c.Class, c.Nickname, c.Level, c.Exp, c.Gold, c.SkillTickets,
+		c.AccountID, c.Class, c.Nickname, c.Level, c.Exp, c.Gold, c.SkillTickets, c.ChestCount, c.ZoneLevel,
 	).Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 }
 
 func (r *CharacterRepo) FindByAccountID(ctx context.Context, accountID int64) (*model.Character, error) {
 	c := &model.Character{}
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, account_id, class, nickname, level, exp, gold, skill_tickets, created_at, updated_at
+		`SELECT id, account_id, class, nickname, level, exp, gold, skill_tickets, chest_count, zone_level, created_at, updated_at
 		 FROM characters WHERE account_id = $1`, accountID,
-	).Scan(&c.ID, &c.AccountID, &c.Class, &c.Nickname, &c.Level, &c.Exp, &c.Gold, &c.SkillTickets, &c.CreatedAt, &c.UpdatedAt)
+	).Scan(&c.ID, &c.AccountID, &c.Class, &c.Nickname, &c.Level, &c.Exp, &c.Gold, &c.SkillTickets, &c.ChestCount, &c.ZoneLevel, &c.CreatedAt, &c.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -43,9 +43,9 @@ func (r *CharacterRepo) FindByAccountID(ctx context.Context, accountID int64) (*
 func (r *CharacterRepo) FindByID(ctx context.Context, id int64) (*model.Character, error) {
 	c := &model.Character{}
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, account_id, class, nickname, level, exp, gold, skill_tickets, created_at, updated_at
+		`SELECT id, account_id, class, nickname, level, exp, gold, skill_tickets, chest_count, zone_level, created_at, updated_at
 		 FROM characters WHERE id = $1`, id,
-	).Scan(&c.ID, &c.AccountID, &c.Class, &c.Nickname, &c.Level, &c.Exp, &c.Gold, &c.SkillTickets, &c.CreatedAt, &c.UpdatedAt)
+	).Scan(&c.ID, &c.AccountID, &c.Class, &c.Nickname, &c.Level, &c.Exp, &c.Gold, &c.SkillTickets, &c.ChestCount, &c.ZoneLevel, &c.CreatedAt, &c.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -60,6 +60,14 @@ func (r *CharacterRepo) UpdateStats(ctx context.Context, c *model.Character) err
 		`UPDATE characters SET level=$1, exp=$2, gold=$3, skill_tickets=$4, updated_at=NOW()
 		 WHERE id=$5`,
 		c.Level, c.Exp, c.Gold, c.SkillTickets, c.ID,
+	)
+	return err
+}
+
+func (r *CharacterRepo) UpdateChestFields(ctx context.Context, charID int64, chestCount, zoneLevel int, gold int64) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE characters SET chest_count=$1, zone_level=$2, gold=$3, updated_at=NOW() WHERE id=$4`,
+		chestCount, zoneLevel, gold, charID,
 	)
 	return err
 }

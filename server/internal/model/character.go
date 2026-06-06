@@ -11,6 +11,8 @@ type Character struct {
 	Exp          int64     `json:"exp"           db:"exp"`
 	Gold         int64     `json:"gold"          db:"gold"`
 	SkillTickets int64     `json:"skill_tickets" db:"skill_tickets"`
+	ChestCount   int       `json:"chest_count"   db:"chest_count"`
+	ZoneLevel    int       `json:"zone_level"    db:"zone_level"`
 	CreatedAt    time.Time `json:"created_at"    db:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"    db:"updated_at"`
 }
