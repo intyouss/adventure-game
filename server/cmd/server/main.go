@@ -63,6 +63,11 @@ func main() {
 	chestSvc := service.NewChestService(characterRepo, equipRepo, equipSvc)
 	chestHandler := handler.NewChestHandler(chestSvc)
 
+	stageSvc := service.NewStageService(characterRepo)
+	stageHandler := handler.NewStageHandler(stageSvc)
+	currencySvc := service.NewCurrencyService(characterRepo)
+	_ = currencySvc
+
 	// --- Router ---
 	r := gin.New()
 	r.Use(middleware.Recovery())
@@ -102,6 +107,8 @@ func main() {
 		protected.POST("/skill/slot", skillHandler.SetSkillSlot)
 		protected.POST("/chest/open", chestHandler.OpenChest)
 		protected.POST("/chest/upgrade", chestHandler.UpgradeZone)
+		protected.GET("/stage/config", stageHandler.GetStageConfig)
+		protected.POST("/stage/claim", stageHandler.ClaimRewards)
 	}
 
 	slog.Info("server starting", "port", cfg.Server.Port)
