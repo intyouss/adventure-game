@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -10,7 +10,10 @@ import (
 
 	"github.com/adventure-game/server/config"
 	"github.com/adventure-game/server/internal/database"
+	"github.com/adventure-game/server/internal/handler"
 	"github.com/adventure-game/server/internal/middleware"
+	"github.com/adventure-game/server/internal/repository"
+	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -40,6 +43,12 @@ func main() {
 	}
 	defer rdb.Close()
 
+	// --- Dependency injection ---
+	accountRepo := repository.NewAccountRepo(db)
+	accountSvc := service.NewAccountService(accountRepo, rdb, cfg.JWT)
+	accountHandler := handler.NewAccountHandler(accountSvc)
+
+	// --- Router ---
 	r := gin.New()
 	r.Use(middleware.Recovery())
 	r.Use(middleware.Logger())
@@ -56,6 +65,18 @@ func main() {
 		}
 		response.OK(c, gin.H{"status": "healthy"})
 	})
+
+	// Auth routes (no JWT required)
+	auth := r.Group("/api/auth")
+	{
+		auth.POST("/send_code", accountHandler.SendCode)
+		auth.POST("/register", accountHandler.Register)
+		auth.POST("/login", accountHandler.Login)
+		auth.POST("/refresh", accountHandler.RefreshToken)
+	}
+
+	// JWT auth middleware for protected routes
+	r.Use(middleware.Auth(cfg.JWT))
 
 	slog.Info("server starting", "port", cfg.Server.Port)
 	if err := r.Run(fmt.Sprintf(":%d", cfg.Server.Port)); err != nil {
