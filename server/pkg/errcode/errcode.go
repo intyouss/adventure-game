@@ -1,4 +1,4 @@
-﻿package errcode
+package errcode
 
 const (
 	// 通用
