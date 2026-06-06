@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
@@ -19,26 +19,30 @@ func NewLeaderboardHandler(svc *service.LeaderboardService) *LeaderboardHandler 
 	return &LeaderboardHandler{svc: svc}
 }
 
+// GetTop handles GET /api/leaderboard?page=1&size=50
 func (h *LeaderboardHandler) GetTop(c *gin.Context) {
-	chapter, _ := strconv.Atoi(c.DefaultQuery("chapter", "1"))
-	topN, _ := strconv.ParseInt(c.DefaultQuery("n", "100"), 10, 64)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	size, _ := strconv.Atoi(c.DefaultQuery("size", "50"))
 
-	results, err := h.svc.GetTopN(c.Request.Context(), chapter, topN)
+	rankings, total, err := h.svc.GetTopN(c.Request.Context(), page, size)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
 		return
 	}
-	response.OK(c, results)
+
+	response.OK(c, gin.H{
+		"rankings": rankings,
+		"total":    total,
+		"page":     page,
+		"size":     size,
+	})
 }
 
+// GetMyRank handles GET /api/leaderboard/my_rank
 func (h *LeaderboardHandler) GetMyRank(c *gin.Context) {
-	chapter, _ := strconv.Atoi(c.DefaultQuery("chapter", "1"))
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
-	rank, err := h.svc.GetRank(c.Request.Context(), charID, chapter)
+	rank, err := h.svc.GetRank(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
 		return

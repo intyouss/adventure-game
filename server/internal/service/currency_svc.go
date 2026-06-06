@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -15,14 +15,6 @@ const (
 	CurrencySkillTicket CurrencyType = "skill_ticket"
 )
 
-// CurrencyLog represents a currency transaction.
-type CurrencyLog struct {
-	CharacterID int64        `json:"character_id"`
-	Currency    CurrencyType `json:"currency"`
-	Amount      int64        `json:"amount"`
-	Reason      string       `json:"reason"`
-}
-
 type CurrencyService struct {
 	charRepo *repository.CharacterRepo
 }
@@ -31,7 +23,7 @@ func NewCurrencyService(charRepo *repository.CharacterRepo) *CurrencyService {
 	return &CurrencyService{charRepo: charRepo}
 }
 
-// AddGold adds gold to a character.
+// AddGold adds gold to a character and writes a currency log.
 func (s *CurrencyService) AddGold(ctx context.Context, charID int64, amount int64, reason string) error {
 	if amount <= 0 {
 		return fmt.Errorf("amount must be positive")
@@ -41,7 +33,11 @@ func (s *CurrencyService) AddGold(ctx context.Context, charID int64, amount int6
 		return fmt.Errorf("character not found")
 	}
 	char.Gold += amount
-	return s.charRepo.UpdateStats(ctx, char)
+	if err := s.charRepo.UpdateStats(ctx, char); err != nil {
+		return err
+	}
+	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "gold", amount, reason)
+	return nil
 }
 
 // DeductGold deducts gold. Returns error if insufficient.
@@ -57,10 +53,14 @@ func (s *CurrencyService) DeductGold(ctx context.Context, charID int64, amount i
 		return fmt.Errorf("insufficient gold")
 	}
 	char.Gold -= amount
-	return s.charRepo.UpdateStats(ctx, char)
+	if err := s.charRepo.UpdateStats(ctx, char); err != nil {
+		return err
+	}
+	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "gold", -amount, reason)
+	return nil
 }
 
-// AddSkillTickets adds skill tickets.
+// AddSkillTickets adds skill tickets and writes a currency log.
 func (s *CurrencyService) AddSkillTickets(ctx context.Context, charID int64, amount int64, reason string) error {
 	if amount <= 0 {
 		return fmt.Errorf("amount must be positive")
@@ -70,5 +70,9 @@ func (s *CurrencyService) AddSkillTickets(ctx context.Context, charID int64, amo
 		return fmt.Errorf("character not found")
 	}
 	char.SkillTickets += amount
-	return s.charRepo.UpdateStats(ctx, char)
+	if err := s.charRepo.UpdateStats(ctx, char); err != nil {
+		return err
+	}
+	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "skill_ticket", amount, reason)
+	return nil
 }

@@ -1,19 +1,58 @@
-﻿extends Node
+extends Node
 
 var character: Dictionary = {}
-var inventory: Array = []
+var stats: Dictionary = {}
+var equipment_inventory: Array = []
 var equipped: Dictionary = {}
-var skills: Array = []
-var skill_slots: Dictionary = {}
+var skill_inventory: Array = []
+var skill_equipped: Array = []
 var chest_count: int = 0
 var zone_level: int = 1
 var shop_level: int = 1
-var stage_chapter: int = 1
-var stage_level: int = 1
+var stage_progress: Dictionary = {}
 
 signal character_updated
-signal inventory_updated
-signal skills_updated
+signal stats_changed
+signal inventory_changed
+signal skill_updated
+
+func update_from_server(data: Dictionary):
+	if data.has("character"):
+		character.merge(data["character"], true)
+		character_updated.emit()
+	if data.has("stats"):
+		stats = data["stats"]
+		stats_changed.emit()
+	if data.has("equipment_inventory"):
+		equipment_inventory = data["equipment_inventory"]
+		inventory_changed.emit()
+	if data.has("equipped"):
+		equipped = data["equipped"]
+	if data.has("skill_inventory"):
+		skill_inventory = data["skill_inventory"]
+		skill_updated.emit()
+	if data.has("skill_equipped"):
+		skill_equipped = data["skill_equipped"]
+	if data.has("chest_count"):
+		chest_count = data["chest_count"]
+	if data.has("zone_level"):
+		zone_level = data["zone_level"]
+	if data.has("shop_level"):
+		shop_level = data["shop_level"]
+	if data.has("stage_progress"):
+		stage_progress = data["stage_progress"]
+
+func clear():
+	character = {}
+	stats = {}
+	equipment_inventory = []
+	equipped = {}
+	skill_inventory = []
+	skill_equipped = []
+	chest_count = 0
+	zone_level = 1
+	shop_level = 1
+	stage_progress = {}
 
 func load_character():
 	var res = await NetworkManager.request("GET", "/api/character")
@@ -24,16 +63,16 @@ func load_character():
 func load_equipment():
 	var res = await NetworkManager.request("GET", "/api/equipment/inventory")
 	if res.code == 0:
-		inventory = res.data.inventory
+		equipment_inventory = res.data.inventory
 		equipped = res.data.equipped
-		inventory_updated.emit()
+		inventory_changed.emit()
 
 func load_skills():
 	var res = await NetworkManager.request("GET", "/api/skill/list")
 	if res.code == 0:
-		skills = res.data.skills
-		skill_slots = res.data.slots
-		skills_updated.emit()
+		skill_inventory = res.data.skills
+		skill_equipped = res.data.slots
+		skill_updated.emit()
 
 func load_chest_info():
 	var res = await NetworkManager.request("GET", "/api/chest/info")
@@ -44,8 +83,7 @@ func load_chest_info():
 func load_progress():
 	var res = await NetworkManager.request("GET", "/api/stage/progress")
 	if res.code == 0:
-		stage_chapter = res.data.chapter
-		stage_level = res.data.level
+		stage_progress = res.data
 
 func load_all():
 	await load_character()

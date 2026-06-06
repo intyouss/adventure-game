@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
@@ -50,9 +50,6 @@ func (h *CharacterHandler) AddExp(c *gin.Context) {
 	}
 
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	char, err := h.svc.AddExp(c.Request.Context(), charID, req.Exp)
 	if err != nil {

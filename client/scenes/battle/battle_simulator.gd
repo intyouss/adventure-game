@@ -1,4 +1,4 @@
-﻿class_name BattleSimulator
+class_name BattleSimulator
 extends Node
 
 class BattleUnit:
@@ -46,7 +46,8 @@ var waves: Array[WaveData] = []
 var summary: BattleSummary
 var current_wave: int = 0
 var elapsed_time: float = 0.0
-var _elapsed_attack: float = 0.0
+var _elapsed_player_attack: float = 0.0
+var _elapsed_monster_attack: float = 0.0
 var wave_damage: float = 0.0
 var wave_damage_taken: float = 0.0
 var _skill_cooldowns: Dictionary = {}
@@ -57,17 +58,23 @@ func start_battle(stage_config: Dictionary, player_stats: Dictionary):
 	player = _create_unit(player_stats)
 	waves = _parse_waves(stage_config)
 	summary = BattleSummary.new()
-	summary.stage_id = stage_config.stage_id
+	summary.stage_id = stage_config.get("stage_id", "unknown")
 	summary.player_stats = player_stats
+	summary.skills_used = []
+	summary.skill_cast_counts = {}
 	current_wave = 0
 	elapsed_time = 0.0
+	_elapsed_player_attack = 0.0
+	_elapsed_monster_attack = 0.0
+	wave_damage = 0.0
+	wave_damage_taken = 0.0
 
 func _create_unit(stats: Dictionary) -> BattleUnit:
 	var unit = BattleUnit.new()
-	unit.max_hp = stats.hp
-	unit.hp = stats.hp
-	unit.atk = stats.atk
-	unit.def = stats.def
+	unit.max_hp = stats.get("hp", 100)
+	unit.hp = stats.get("hp", 100)
+	unit.atk = stats.get("atk", 10)
+	unit.def = stats.get("def", 5)
 	unit.crit_rate = stats.get("crit_rate", 0.05)
 	unit.crit_dmg = stats.get("crit_dmg", 1.5)
 	unit.atk_speed = stats.get("atk_speed", 1.0)
@@ -75,17 +82,18 @@ func _create_unit(stats: Dictionary) -> BattleUnit:
 
 func _parse_waves(config: Dictionary) -> Array:
 	var result: Array = []
-	for w in config.waves:
+	var wave_list = config.get("waves", config.get("config", {}).get("waves", []))
+	for w in wave_list:
 		var wd = WaveData.new()
 		wd.is_boss = w.get("is_boss", false)
 		wd.monsters = []
-		for m in w.monsters:
-			for i in range(m.count):
+		for m in w.get("monsters", []):
+			for _i in range(m.get("count", 1)):
 				var unit = BattleUnit.new()
-				unit.max_hp = m.hp
-				unit.hp = m.hp
-				unit.atk = m.atk
-				unit.def = m.def
+				unit.max_hp = m.get("hp", 100)
+				unit.hp = m.get("hp", 100)
+				unit.atk = m.get("atk", 10)
+				unit.def = m.get("def", 5)
 				wd.monsters.append(unit)
 		result.append(wd)
 	return result
@@ -98,27 +106,38 @@ func tick(delta: float):
 	var wave = waves[current_wave]
 	var attack_interval = 1.0 / max(player.atk_speed, 0.1)
 
-	_elapsed_attack += delta
-	if _elapsed_attack >= attack_interval:
-		_elapsed_attack -= attack_interval
+	# Player attack (attacks nearest alive monster)
+	_elapsed_player_attack += delta
+	if _elapsed_player_attack >= attack_interval:
+		_elapsed_player_attack -= attack_interval
 		for monster in wave.monsters:
 			if monster.hp > 0:
 				var dmg = _calc_damage(player.atk, monster.def, player.crit_rate, player.crit_dmg)
 				monster.take_damage(dmg)
 				summary.total_damage_dealt += dmg
 				wave_damage += dmg
-				AudioManager.play_sfx("player_attack")
 				break
 
-	for monster in wave.monsters:
-		if monster.hp > 0:
-			var dmg = _calc_damage(monster.atk, player.def, 0, 0)
-			player.take_damage(dmg)
-			summary.total_damage_taken += dmg
-			wave_damage_taken += dmg
-
+	# Skill casting
 	_try_cast_skills(delta)
 
+	# Monster attacks - gate with 1.0s interval per monster
+	_elapsed_monster_attack += delta
+	if _elapsed_monster_attack >= 1.0:
+		_elapsed_monster_attack -= 1.0
+		for monster in wave.monsters:
+			if monster.hp > 0:
+				var dmg = _calc_damage(monster.atk, player.def, 0.0, 0.0)
+				player.take_damage(dmg)
+				summary.total_damage_taken += dmg
+				wave_damage_taken += dmg
+
+	# Check if player is defeated
+	if player.hp <= 0:
+		_finish_battle()
+		return
+
+	# Check wave cleared
 	if _wave_cleared(wave):
 		summary.waves.append({
 			"wave": current_wave + 1,
@@ -134,9 +153,61 @@ func tick(delta: float):
 			_finish_battle()
 
 func _try_cast_skills(delta: float):
-	# Placeholder - skill casting with cooldowns will be implemented later
-	for skill_id in _skill_cooldowns.keys():
-		_skill_cooldowns[skill_id] = max(_skill_cooldowns[skill_id] - delta, 0.0)
+	var equipped = PlayerState.skill_equipped
+	var skills_data = PlayerState.skill_inventory
+	for skill_id in equipped:
+		if skill_id == null or skill_id == "":
+			continue
+		# Tick cooldown
+		if not _skill_cooldowns.has(skill_id):
+			_skill_cooldowns[skill_id] = 0.0
+		if _skill_cooldowns[skill_id] > 0:
+			_skill_cooldowns[skill_id] = max(_skill_cooldowns[skill_id] - delta, 0.0)
+			continue
+		# Cast skill when ready
+		var skill_info = _find_skill_info(skill_id, skills_data)
+		if skill_info.is_empty():
+			continue
+		var wave = waves[current_wave]
+		var coef = skill_info.get("coeff", 1.0)
+		var effect = skill_info.get("effect_type", "damage")
+		match effect:
+			"damage":
+				var target = skill_info.get("effect_params", {}).get("target", "single")
+				if target == "aoe":
+					for monster in wave.monsters:
+						if monster.hp > 0:
+							var dmg = _calc_damage(player.atk * coef, monster.def, player.crit_rate, player.crit_dmg)
+							monster.take_damage(dmg)
+							summary.total_damage_dealt += dmg
+							wave_damage += dmg
+				else:
+					for monster in wave.monsters:
+						if monster.hp > 0:
+							var dmg = _calc_damage(player.atk * coef, monster.def, player.crit_rate, player.crit_dmg)
+							monster.take_damage(dmg)
+							summary.total_damage_dealt += dmg
+							wave_damage += dmg
+							break
+			"buff":
+				if effect == "buff":
+					var params = skill_info.get("effect_params", {})
+					if params.get("type") == "shield":
+						pass  # Shield logic placeholder
+		# Track usage
+		if not summary.skill_cast_counts.has(skill_id):
+			summary.skill_cast_counts[skill_id] = 0
+		summary.skill_cast_counts[skill_id] += 1
+		if not summary.skills_used.has(skill_id):
+			summary.skills_used.append(skill_id)
+		# Set cooldown
+		_skill_cooldowns[skill_id] = skill_info.get("cooldown", 3.0)
+
+func _find_skill_info(skill_id: String, skills_data: Array) -> Dictionary:
+	for s in skills_data:
+		if s.get("skill_id", s.get("id", "")) == skill_id:
+			return s
+	return {}
 
 func _wave_cleared(wave: WaveData) -> bool:
 	for m in wave.monsters:

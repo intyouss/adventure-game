@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -101,17 +101,20 @@ func (s *AccountService) VerifyCode(ctx context.Context, target, code string) er
 }
 
 // RegisterRequest represents a registration request.
+// Uses phone/email/password/code/nickname fields.
 type RegisterRequest struct {
-	Target   string `json:"target"`   // phone or email
-	Type     string `json:"type"`     // "phone" or "email"
-	Code     string `json:"code"`
-	Password string `json:"password"`
+	Phone    string `json:"phone"`
+	Email    string `json:"email"`
+	Password string `json:"password" binding:"required"`
+	Code     string `json:"code" binding:"required"`
+	Nickname string `json:"nickname"`
 }
 
 // LoginRequest represents a login request.
+// Uses "account" key that accepts phone or email.
 type LoginRequest struct {
-	Target   string `json:"target"`
-	Password string `json:"password"`
+	Account  string `json:"account" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 // TokenPair contains an access token and refresh token.
@@ -119,27 +122,35 @@ type TokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int    `json:"expires_in"`
+	AccountID    int64  `json:"account_id"`
+	CharacterID  int64  `json:"character_id"`
 }
 
 // Register handles new user registration.
 func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*TokenPair, error) {
-	// Validate target
-	if req.Target == "" || (req.Type != "phone" && req.Type != "email") {
-		return nil, fmt.Errorf("invalid target")
+	// Determine target: phone or email
+	target := req.Phone
+	targetType := "phone"
+	if target == "" {
+		target = req.Email
+		targetType = "email"
+	}
+	if target == "" {
+		return nil, fmt.Errorf("phone/email required")
 	}
 
 	// Verify code
-	if err := s.VerifyCode(ctx, req.Target, req.Code); err != nil {
+	if err := s.VerifyCode(ctx, target, req.Code); err != nil {
 		return nil, err
 	}
 
 	// Check existing
 	var existing *model.Account
 	var err error
-	if req.Type == "phone" {
-		existing, err = s.repo.FindByPhone(ctx, req.Target)
+	if targetType == "phone" {
+		existing, err = s.repo.FindByPhone(ctx, target)
 	} else {
-		existing, err = s.repo.FindByEmail(ctx, req.Target)
+		existing, err = s.repo.FindByEmail(ctx, target)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("check existing: %w", err)
@@ -156,20 +167,24 @@ func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*To
 
 	// Create account
 	account := &model.Account{PasswordHash: hash}
-	if req.Type == "phone" {
-		account.Phone = req.Target
+	if targetType == "phone" {
+		account.Phone = target
 	} else {
-		account.Email = req.Target
+		account.Email = target
 	}
 	if err := s.repo.Create(ctx, account); err != nil {
 		return nil, fmt.Errorf("create account: %w", err)
 	}
 
 	// Auto-create character for the new account
+	nickname := req.Nickname
+	if nickname == "" {
+		nickname = fmt.Sprintf("冒险家%06d", account.ID)
+	}
 	char := &model.Character{
 		AccountID:    account.ID,
 		Class:        "warrior",
-		Nickname:     "",
+		Nickname:     nickname,
 		Level:        1,
 		Exp:          0,
 		Gold:         0,
@@ -180,19 +195,18 @@ func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*To
 		return nil, fmt.Errorf("create character: %w", err)
 	}
 
-	// Generate tokens with real character ID
 	return s.generateTokens(account.ID, char.ID)
 }
 
 // Login authenticates a user and returns tokens.
 func (s *AccountService) Login(ctx context.Context, req LoginRequest) (*TokenPair, error) {
-	// Find account by phone or email
-	account, err := s.repo.FindByPhone(ctx, req.Target)
+	// Find account by phone or email (using "account" field)
+	account, err := s.repo.FindByPhone(ctx, req.Account)
 	if err != nil {
 		return nil, fmt.Errorf("find account: %w", err)
 	}
 	if account == nil {
-		account, err = s.repo.FindByEmail(ctx, req.Target)
+		account, err = s.repo.FindByEmail(ctx, req.Account)
 		if err != nil {
 			return nil, fmt.Errorf("find account: %w", err)
 		}
@@ -269,6 +283,8 @@ func (s *AccountService) generateTokens(accountID, characterID int64) (*TokenPai
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    s.jwtCfg.AccessTTL,
+		AccountID:    accountID,
+		CharacterID:  characterID,
 	}, nil
 }
 

@@ -2,12 +2,14 @@ package model
 
 // Equipment represents a single piece of equipment.
 type Equipment struct {
-	ID      string `json:"id"`
-	Slot    string `json:"slot"`
-	Quality int    `json:"quality"`
-	ATK     int    `json:"atk"`
-	DEF     int    `json:"def"`
-	HP      int    `json:"hp"`
+	ID       string  `json:"id"`
+	Slot     string  `json:"slot"`
+	Quality  int     `json:"quality"`
+	ATK      int     `json:"atk"`
+	DEF      int     `json:"def"`
+	HP       int     `json:"hp"`
+	CritRate float64 `json:"crit_rate"`
+	AtkSpeed float64 `json:"atk_speed"`
 }
 
 // EquipmentSlots lists all 10 equipment slots in order.
@@ -27,14 +29,14 @@ var QualityNames = map[int]string{
 	7: "神话",
 }
 
-// QualityStatRanges defines stat ranges per quality level.
-// [min, max] for ATK, DEF, HP respectively.
+// QualityStatRanges defines stat ranges per quality level: [min, max] for ATK, DEF, HP.
+// Secondary stats CritRate and AtkSpeed are randomized within fixed ranges.
 var QualityStatRanges = map[int][3][2]int{
-	1: {{1, 5}, {0, 2}, {0, 10}},
-	2: {{3, 8}, {2, 5}, {5, 20}},
-	3: {{8, 15}, {5, 10}, {20, 40}},
-	4: {{15, 25}, {10, 18}, {40, 70}},
-	5: {{25, 40}, {18, 28}, {70, 110}},
-	6: {{40, 60}, {28, 40}, {110, 160}},
-	7: {{60, 85}, {40, 55}, {160, 220}},
+	1: {{5, 15}, {3, 8}, {20, 50}},
+	2: {{16, 30}, {9, 18}, {51, 100}},
+	3: {{31, 50}, {19, 32}, {101, 180}},
+	4: {{51, 80}, {33, 52}, {181, 320}},
+	5: {{81, 120}, {53, 78}, {321, 520}},
+	6: {{121, 180}, {79, 115}, {521, 800}},
+	7: {{181, 260}, {116, 165}, {801, 1200}},
 }

@@ -1,6 +1,9 @@
-﻿package model
+package model
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 type Character struct {
 	ID           int64     `json:"id"            db:"id"`
@@ -38,3 +41,19 @@ var ClassBaseStats = map[string]FinalStats{
 var ClassGrowth = map[string]FinalStats{
 	"warrior": {ATK: 3, DEF: 1, HP: 20, CritRate: 0, CritDmg: 0, AtkSpeed: 0},
 }
+
+// ExpToNextLevel returns experience needed to reach the next level.
+// Formula: 100 * 1.15^(level-1)
+func ExpToNextLevel(level int) int64 {
+	return int64(math.Round(100 * math.Pow(1.15, float64(level-1))))
+}
+
+// CalcCP computes Combat Power (CP).
+// Formula: (ATK * 2 + DEF * 1.5 + HP * 0.5) * (1 + level * 0.1)
+func CalcCP(stats FinalStats, level int) float64 {
+	raw := float64(stats.ATK)*2.0 + float64(stats.DEF)*1.5 + float64(stats.HP)*0.5
+	return math.Round(raw * (1.0 + float64(level)*0.1))
+}
+
+// MaxLevel is the maximum character level.
+const MaxLevel = 150

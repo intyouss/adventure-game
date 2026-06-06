@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -12,23 +12,23 @@ import (
 )
 
 type EquipmentService struct {
-	repo *repository.EquipmentRepo
+	repo        *repository.EquipmentRepo
+	currencySvc *CurrencyService
 }
 
-func NewEquipmentService(repo *repository.EquipmentRepo) *EquipmentService {
-	return &EquipmentService{repo: repo}
+func NewEquipmentService(repo *repository.EquipmentRepo, currencySvc *CurrencyService) *EquipmentService {
+	return &EquipmentService{repo: repo, currencySvc: currencySvc}
 }
 
-// calcDecomposeReward calculates exp and gold from decomposing equipment.
-// Returns (exp, gold).
-func (s *EquipmentService) calcDecomposeReward(quality int) (int64, int64) {
-	baseExp := int64(10)
-	baseGold := int64(50)
-	mult := int64(1)
-	for i := 1; i < quality; i++ {
-		mult = mult * 5 / 2
-	}
-	return baseExp * mult, baseGold * mult
+// DecomposeRewardTable: exp and gold rewards per quality level.
+var decomposeRewardTable = map[int]struct{ Exp, Gold int64 }{
+	1: {10, 50},
+	2: {25, 125},
+	3: {60, 300},
+	4: {150, 750},
+	5: {375, 1875},
+	6: {900, 4500},
+	7: {2250, 11250},
 }
 
 // calcEquipStats sums stats from equipped items.
@@ -48,6 +48,8 @@ func (s *EquipmentService) calcEquipStats(equippedJSON string, equipmentsJSON st
 			bonus.ATK += e.ATK
 			bonus.DEF += e.DEF
 			bonus.HP += e.HP
+			bonus.CritRate += e.CritRate
+			bonus.AtkSpeed += e.AtkSpeed
 		}
 	}
 	return bonus
@@ -64,13 +66,21 @@ func (s *EquipmentService) GenerateEquipment(slot string, quality int) (model.Eq
 	hp, _ := randInt(ranges[2][0], ranges[2][1])
 	id, _ := generateEquipID()
 
+	// Secondary stats: CritRate 0-10%, AtkSpeed 0-15% based on quality
+	critBase := float64(quality) * 0.01
+	critRoll, _ := randFloat(critBase, critBase+0.05)
+	aspdBase := 0.95 + float64(quality)*0.01
+	aspdRoll, _ := randFloat(aspdBase, aspdBase+0.10)
+
 	return model.Equipment{
-		ID: id, Slot: slot, Quality: quality, ATK: atk, DEF: def, HP: hp,
+		ID: id, Slot: slot, Quality: quality,
+		ATK: atk, DEF: def, HP: hp,
+		CritRate: critRoll, AtkSpeed: aspdRoll,
 	}, nil
 }
 
-// Decompose removes equipment and rewards gold.
-func (s *EquipmentService) Decompose(ctx context.Context, charID int64, equipID string) (exp int64, gold int64, err error) {
+// Decompose removes equipment by item_uids and rewards gold + exp using currency service.
+func (s *EquipmentService) Decompose(ctx context.Context, charID int64, itemUIDs []string) (totalExp int64, totalGold int64, err error) {
 	equipJSON, equippedJSON, currentGold, err := s.repo.GetEquipments(ctx, charID)
 	if err != nil {
 		return 0, 0, err
@@ -81,36 +91,58 @@ func (s *EquipmentService) Decompose(ctx context.Context, charID int64, equipID 
 		return 0, 0, fmt.Errorf("parse inventory: %w", err)
 	}
 
-	var found *model.Equipment
+	var equipped map[string]string
+	json.Unmarshal([]byte(equippedJSON), &equipped)
+	if equipped == nil {
+		equipped = make(map[string]string)
+	}
+
+	uidSet := make(map[string]bool)
+	for _, uid := range itemUIDs {
+		uidSet[uid] = true
+	}
+
+	var foundQualities []int
 	var newInv []model.Equipment
 	for _, e := range inventory {
-		if e.ID == equipID {
-			cp := e
-			found = &cp
+		if uidSet[e.ID] {
+			foundQualities = append(foundQualities, e.Quality)
+			// Remove from equipped if equipped
+			for slot, id := range equipped {
+				if id == e.ID {
+					delete(equipped, slot)
+				}
+			}
 		} else {
 			newInv = append(newInv, e)
 		}
 	}
-	if found == nil {
+	if len(foundQualities) == 0 {
 		return 0, 0, fmt.Errorf("equipment not found")
 	}
 
-	var equipped map[string]string
-	json.Unmarshal([]byte(equippedJSON), &equipped)
-	for slot, id := range equipped {
-		if id == equipID {
-			delete(equipped, slot)
+	// Calculate rewards
+	for _, q := range foundQualities {
+		r, ok := decomposeRewardTable[q]
+		if !ok {
+			r = decomposeRewardTable[1]
 		}
+		totalExp += r.Exp
+		totalGold += r.Gold
 	}
 
-	exp, gold = s.calcDecomposeReward(found.Quality)
+	newGold := currentGold + totalGold
 	newInvJSON, _ := json.Marshal(newInv)
 	newEqJSON, _ := json.Marshal(equipped)
 
-	if err := s.repo.UpdateEquipments(ctx, charID, string(newInvJSON), string(newEqJSON), currentGold+gold); err != nil {
+	if err := s.repo.UpdateEquipments(ctx, charID, string(newInvJSON), string(newEqJSON), newGold); err != nil {
 		return 0, 0, fmt.Errorf("save: %w", err)
 	}
-	return exp, gold, nil
+
+	// Write currency log for gold
+	_ = s.currencySvc.charRepo.InsertCurrencyLog(ctx, charID, "gold", totalGold, "decompose_equipment")
+
+	return totalExp, totalGold, nil
 }
 
 // GetInventory returns parsed equipment list and equipped map.
@@ -218,4 +250,15 @@ func randInt(min, max int) (int, error) {
 		return 0, err
 	}
 	return min + int(n.Int64()), nil
+}
+
+func randFloat(min, max float64) (float64, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(10000))
+	if err != nil {
+		return 0, err
+	}
+	r := float64(n.Int64()) / 10000.0
+	val := min + r*(max-min)
+	// Round to 2 decimal places
+	return float64(int(val*100)) / 100, nil
 }

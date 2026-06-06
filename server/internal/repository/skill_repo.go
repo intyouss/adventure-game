@@ -1,4 +1,4 @@
-﻿package repository
+package repository
 
 import (
 	"context"
@@ -14,31 +14,22 @@ func NewSkillRepo(db *sql.DB) *SkillRepo {
 	return &SkillRepo{db: db}
 }
 
-// GetSkillData reads skill_tickets, total_pulls (from equipments JSONB), and skill_slots.
-func (r *SkillRepo) GetSkillData(ctx context.Context, charID int64) (skillTickets int64, totalPulls int, skillSlotsJSON string, err error) {
+// GetSkillsData returns skill_tickets, total_pulls, skill_slots, and skills JSONB.
+func (r *SkillRepo) GetSkillsData(ctx context.Context, charID int64) (skillTickets int64, totalPulls int, skillSlotsJSON string, skillsJSON string, err error) {
 	err = r.db.QueryRowContext(ctx,
-		`SELECT skill_tickets, COALESCE((equipments->>'total_pulls')::int, 0), COALESCE(skill_slots::text, '{}') FROM characters WHERE id=$1`,
+		`SELECT skill_tickets, COALESCE((equipments->>'total_pulls')::int, 0), COALESCE(skill_slots::text, '{}'), COALESCE(skills::text, '{}') FROM characters WHERE id=$1`,
 		charID,
-	).Scan(&skillTickets, &totalPulls, &skillSlotsJSON)
+	).Scan(&skillTickets, &totalPulls, &skillSlotsJSON, &skillsJSON)
 	return
 }
 
-// UpdateAfterPull updates skill_tickets, skill_slots, and total_pulls after a gacha pull.
-func (r *SkillRepo) UpdateAfterPull(ctx context.Context, charID int64, skillTickets int64, totalPulls int, skillSlotsJSON string) error {
-	_, err := r.db.ExecContext(ctx,
-		`UPDATE characters SET skill_tickets=$1, skill_slots=$2::jsonb, equipments=jsonb_set(COALESCE(equipments, '{}'::jsonb), '{total_pulls}', to_jsonb($3::int)) WHERE id=$4`,
-		skillTickets, skillSlotsJSON, totalPulls, charID,
-	)
-	return err
-}
-
-// UpdateSkillSlots updates only the skill_slots column.
-func (r *SkillRepo) UpdateSkillSlots(ctx context.Context, charID int64, skillSlotsJSON string) error {
-	_, err := r.db.ExecContext(ctx,
-		`UPDATE characters SET skill_slots=$1::jsonb WHERE id=$2`,
-		skillSlotsJSON, charID,
-	)
-	return err
+// GetSkillsDataForUpdate locks the row and returns skill data.
+func (r *SkillRepo) GetSkillsDataForUpdate(ctx context.Context, tx *sql.Tx, charID int64) (skillTickets int64, totalPulls int, skillSlotsJSON string, skillsJSON string, err error) {
+	err = tx.QueryRowContext(ctx,
+		`SELECT skill_tickets, COALESCE((equipments->>'total_pulls')::int, 0), COALESCE(skill_slots::text, '{}'), COALESCE(skills::text, '{}') FROM characters WHERE id=$1 FOR UPDATE`,
+		charID,
+	).Scan(&skillTickets, &totalPulls, &skillSlotsJSON, &skillsJSON)
+	return
 }
 
 // DeductTickets atomically deducts skill tickets.
@@ -57,20 +48,29 @@ func (r *SkillRepo) DeductTickets(ctx context.Context, charID int64, amount int6
 	return nil
 }
 
-// GetSkillsData returns skill_tickets, total_pulls, skill_slots, and skills JSONB.
-func (r *SkillRepo) GetSkillsData(ctx context.Context, charID int64) (skillTickets int64, totalPulls int, skillSlotsJSON string, skillsJSON string, err error) {
-	err = r.db.QueryRowContext(ctx,
-		`SELECT skill_tickets, COALESCE((equipments->>'total_pulls')::int, 0), COALESCE(skill_slots::text, '{}'), COALESCE(skills::text, '[]') FROM characters WHERE id=$1`,
-		charID,
-	).Scan(&skillTickets, &totalPulls, &skillSlotsJSON, &skillsJSON)
-	return
-}
-
 // UpdateSkills updates skill_tickets, total_pulls, and skills JSONB.
 func (r *SkillRepo) UpdateSkills(ctx context.Context, charID int64, skillTickets int64, totalPulls int, skillsJSON string) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE characters SET skill_tickets=$1, equipments=jsonb_set(COALESCE(equipments, '{}'::jsonb), '{total_pulls}', to_jsonb($2::int)), skills=$3::jsonb WHERE id=$4`,
 		skillTickets, totalPulls, skillsJSON, charID,
+	)
+	return err
+}
+
+// UpdateSkillsInTx updates skills within a transaction.
+func (r *SkillRepo) UpdateSkillsInTx(ctx context.Context, tx *sql.Tx, charID int64, skillTickets int64, totalPulls int, skillsJSON string) error {
+	_, err := tx.ExecContext(ctx,
+		`UPDATE characters SET skill_tickets=$1, equipments=jsonb_set(COALESCE(equipments, '{}'::jsonb), '{total_pulls}', to_jsonb($2::int)), skills=$3::jsonb WHERE id=$4`,
+		skillTickets, totalPulls, skillsJSON, charID,
+	)
+	return err
+}
+
+// UpdateSkillSlots updates only the skill_slots column.
+func (r *SkillRepo) UpdateSkillSlots(ctx context.Context, charID int64, skillSlotsJSON string) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE characters SET skill_slots=$1::jsonb WHERE id=$2`,
+		skillSlotsJSON, charID,
 	)
 	return err
 }

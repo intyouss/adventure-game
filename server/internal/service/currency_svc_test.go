@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import "testing"
 
@@ -11,9 +11,9 @@ func TestCurrencyTypeConstants(t *testing.T) {
 	}
 }
 
-func TestCurrencyLogStruct(t *testing.T) {
-	log := CurrencyLog{CharacterID: 1, Currency: CurrencyGold, Amount: 100, Reason: "test"}
-	if log.CharacterID != 1 || log.Amount != 100 {
-		t.Error("CurrencyLog fields incorrect")
+func TestNewCurrencyService(t *testing.T) {
+	svc := NewCurrencyService(nil)
+	if svc == nil {
+		t.Error("NewCurrencyService returned nil")
 	}
 }
