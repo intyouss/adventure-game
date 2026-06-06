@@ -21,7 +21,7 @@ func _ready():
 	leaderboard_btn.pressed.connect(_on_leaderboard_pressed)
 
 func _on_skill_pressed():
-	print("=== SKILL BUTTON CLICKED ===")
+	skill_btn.text = "✓ 已切换"
 	if _current_mode == Mode.SKILL_INVENTORY:
 		_current_mode = Mode.NORMAL
 		mode_changed.emit(Mode.NORMAL)
