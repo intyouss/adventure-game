@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"fmt"
@@ -40,7 +40,7 @@ func main() {
 	r.Use(middleware.CORS())
 
 	r.GET("/healthz", func(c *gin.Context) {
-		if err := db.Ping(); err != nil {
+		if err := db.PingContext(c.Request.Context()); err != nil {
 			response.Error(c, 503, -1, "database unavailable")
 			return
 		}
