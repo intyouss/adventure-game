@@ -15,7 +15,9 @@ func _ready():
 	print("=== SkillBtn global_pos=", skill_btn.global_position, " size=", skill_btn.size, " visible=", skill_btn.visible, " disabled=", skill_btn.disabled)
 	print("=== BottomButtonRow _ready, skill_btn=", skill_btn, " shop_btn=", shop_btn, " lb_btn=", leaderboard_btn)
 	skill_btn.pressed.connect(_on_skill_pressed)
+	print("=== skill_btn connected: ", skill_btn.pressed.is_connected(_on_skill_pressed))
 	shop_btn.pressed.connect(_on_shop_pressed)
+	print("=== shop_btn connected: ", shop_btn.pressed.is_connected(_on_shop_pressed))
 	leaderboard_btn.pressed.connect(_on_leaderboard_pressed)
 
 func _on_skill_pressed():
