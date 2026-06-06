@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"context"
@@ -68,6 +68,11 @@ func main() {
 	currencySvc := service.NewCurrencyService(characterRepo)
 	_ = currencySvc
 
+	battleSvc := service.NewBattleService(rdb)
+	leaderboardSvc := service.NewLeaderboardService(rdb)
+	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardSvc)
+	_ = battleSvc
+
 	// --- Router ---
 	r := gin.New()
 	r.Use(middleware.Recovery())
@@ -109,6 +114,8 @@ func main() {
 		protected.POST("/chest/upgrade", chestHandler.UpgradeZone)
 		protected.GET("/stage/config", stageHandler.GetStageConfig)
 		protected.POST("/stage/claim", stageHandler.ClaimRewards)
+		protected.GET("/leaderboard", leaderboardHandler.GetTop)
+		protected.GET("/leaderboard/rank", leaderboardHandler.GetMyRank)
 	}
 
 	slog.Info("server starting", "port", cfg.Server.Port)
