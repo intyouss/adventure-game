@@ -1,0 +1,19 @@
+﻿server:
+  port: 8080
+
+database:
+  host: localhost
+  port: 5432
+  user: adventurer
+  password: adventurer_dev
+  dbname: adventure_game
+  sslmode: disable
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+jwt:
+  secret: "change-me-in-production-use-256-bit-random"
+  access_ttl: 7200
