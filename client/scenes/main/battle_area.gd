@@ -49,7 +49,11 @@ func _load_stages():
 	var res = await NetworkManager.request("GET", "/api/stage/config?chapter=%d" % _current_chapter)
 	var stages = []
 	if res.code == 0:
-		stages = res.data.get("stages", res.data.get("configs", []))
+		var data = res.data
+		if data is Array:
+			stages = data
+		else:
+			stages = data.get("stages", data.get("configs", []))
 	else:
 		for i in range(1, 11):
 			stages.append({"stage_id": "%d-%d" % [_current_chapter, i], "level": i})
