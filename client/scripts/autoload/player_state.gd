@@ -28,6 +28,7 @@ func update_from_server(data: Dictionary):
 	if data.has("equipment_inventory"):
 		equipment_inventory = data["equipment_inventory"]
 		inventory_changed.emit()
+		EventBus.inventory_changed.emit()
 	if data.has("equipped"):
 		equipped = data["equipped"]
 	if data.has("skill_inventory"):
@@ -69,6 +70,7 @@ func load_equipment():
 		equipment_inventory = res.data.get("items", [])
 		equipped = res.data.equipped
 		inventory_changed.emit()
+		EventBus.inventory_changed.emit()
 
 func load_skills():
 	var res = await NetworkManager.request("GET", "/api/skill/list")

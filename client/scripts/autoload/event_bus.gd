@@ -10,4 +10,5 @@ signal level_up(new_level: int)
 signal item_obtained(item: Dictionary)
 signal gold_changed(new_amount: int)
 signal skill_tickets_changed(new_amount: int)
+signal inventory_changed
 signal skill_updated
