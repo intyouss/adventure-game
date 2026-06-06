@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid=""]
+[gd_scene load_steps=3 format=3 uid=""]
 
 [ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
+
+[ext_resource type="Script" path="res://scenes/main/bottom_button_row.gd" id="2_bottom_button_row"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
@@ -79,35 +81,27 @@ offset_bottom = 470.0
 
 [node name="BottomButtonRow" type="Control" parent="."]
 layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = -44.0
+script = ExtResource("2_bottom_button_row")
 
-[node name="BtnEquip" type="Button" parent="BottomButtonRow"]
+[node name="SkillBtn" type="Button" parent="BottomButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "装备"
+text = "📋 技能仓库"
 
-[node name="BtnSkill" type="Button" parent="BottomButtonRow"]
+[node name="ShopBtn" type="Button" parent="BottomButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "技能"
+text = "🏪 商店"
 
-[node name="BtnChest" type="Button" parent="BottomButtonRow"]
+[node name="LeaderboardBtn" type="Button" parent="BottomButtonRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "开箱"
-
-[node name="BtnStage" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "关卡"
-
-[node name="BtnLeaderboard" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "排行榜"
+text = "🏆"
 
 [node name="SkillInventoryPanel" type="Control" parent="."]
 layout_mode = 1
