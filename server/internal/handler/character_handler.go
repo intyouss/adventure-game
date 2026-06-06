@@ -38,3 +38,27 @@ func (h *CharacterHandler) GetCharacter(c *gin.Context) {
 
 	response.OK(c, h.svc.ToResponse(char))
 }
+
+// AddExp handles POST /api/character/add_exp
+func (h *CharacterHandler) AddExp(c *gin.Context) {
+	var req struct {
+		Exp int64 `json:"exp" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
+		return
+	}
+
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
+	}
+
+	char, err := h.svc.AddExp(c.Request.Context(), charID, req.Exp)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+
+	response.OK(c, h.svc.ToResponse(char))
+}

@@ -3,6 +3,7 @@
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,9 +20,18 @@ func NewStageHandler(svc *service.StageService) *StageHandler {
 	return &StageHandler{svc: svc}
 }
 
+// GetStageConfig handles GET /api/stage/start?stage_id=1-3
 func (h *StageHandler) GetStageConfig(c *gin.Context) {
-	chapter, _ := strconv.Atoi(c.DefaultQuery("chapter", "1"))
-	level, _ := strconv.Atoi(c.DefaultQuery("level", "1"))
+	stageID := c.DefaultQuery("stage_id", "1-1")
+	parts := strings.SplitN(stageID, "-", 2)
+	chapter := 1
+	level := 1
+	if len(parts) >= 1 {
+		chapter, _ = strconv.Atoi(parts[0])
+	}
+	if len(parts) >= 2 {
+		level, _ = strconv.Atoi(parts[1])
+	}
 
 	charID := c.GetInt64("character_id")
 	if charID == 0 {
@@ -36,6 +46,22 @@ func (h *StageHandler) GetStageConfig(c *gin.Context) {
 	response.OK(c, cfg)
 }
 
+// GetProgress handles GET /api/stage/progress
+func (h *StageHandler) GetProgress(c *gin.Context) {
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
+	}
+
+	progress, err := h.svc.GetProgress(c.Request.Context(), charID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+	response.OK(c, progress)
+}
+
+// ClaimRewards handles POST /api/stage/complete
 func (h *StageHandler) ClaimRewards(c *gin.Context) {
 	var req struct {
 		Chapter int `json:"chapter"`

@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -45,10 +45,10 @@ func main() {
 
 	// --- Dependency injection ---
 	accountRepo := repository.NewAccountRepo(db)
-	accountSvc := service.NewAccountService(accountRepo, rdb, cfg.JWT)
+	characterRepo := repository.NewCharacterRepo(db)
+	accountSvc := service.NewAccountService(accountRepo, characterRepo, rdb, cfg.JWT)
 	accountHandler := handler.NewAccountHandler(accountSvc)
 
-	characterRepo := repository.NewCharacterRepo(db)
 	characterSvc := service.NewCharacterService(characterRepo)
 	characterHandler := handler.NewCharacterHandler(characterSvc)
 
@@ -105,17 +105,36 @@ func main() {
 
 	protected := r.Group("/api")
 	{
+		// Character
 		protected.GET("/character", characterHandler.GetCharacter)
-		protected.GET("/equipment", equipHandler.GetEquipment)
+		protected.POST("/character/add_exp", characterHandler.AddExp)
+
+		// Equipment
+		protected.GET("/equipment/inventory", equipHandler.GetInventory)
+		protected.POST("/equipment/equip", equipHandler.Equip)
+		protected.POST("/equipment/unequip", equipHandler.Unequip)
 		protected.POST("/equipment/decompose", equipHandler.Decompose)
+
+		// Skill
+		protected.GET("/skill/list", skillHandler.ListSkills)
 		protected.POST("/skill/gacha", skillHandler.Gacha)
-		protected.POST("/skill/slot", skillHandler.SetSkillSlot)
+		protected.POST("/skill/equip", skillHandler.SetSkillSlot)
+		protected.POST("/skill/upgrade", skillHandler.UpgradeSkill)
+		protected.GET("/skill/shop_info", skillHandler.ShopInfo)
+
+		// Chest
+		protected.GET("/chest/info", chestHandler.GetChestInfo)
 		protected.POST("/chest/open", chestHandler.OpenChest)
-		protected.POST("/chest/upgrade", chestHandler.UpgradeZone)
-		protected.GET("/stage/config", stageHandler.GetStageConfig)
-		protected.POST("/stage/claim", stageHandler.ClaimRewards)
+		protected.POST("/chest/upgrade_zone", chestHandler.UpgradeZone)
+
+		// Stage
+		protected.GET("/stage/start", stageHandler.GetStageConfig)
+		protected.GET("/stage/progress", stageHandler.GetProgress)
+		protected.POST("/stage/complete", stageHandler.ClaimRewards)
+
+		// Leaderboard
 		protected.GET("/leaderboard", leaderboardHandler.GetTop)
-		protected.GET("/leaderboard/rank", leaderboardHandler.GetMyRank)
+		protected.GET("/leaderboard/my_rank", leaderboardHandler.GetMyRank)
 	}
 
 	slog.Info("server starting", "port", cfg.Server.Port)

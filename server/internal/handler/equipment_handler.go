@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"net/http"
@@ -18,18 +18,14 @@ func NewEquipmentHandler(svc *service.EquipmentService) *EquipmentHandler {
 	return &EquipmentHandler{svc: svc}
 }
 
-// GetEquipment handles GET /api/equipment
-func (h *EquipmentHandler) GetEquipment(c *gin.Context) {
-	charID, exists := c.Get("character_id")
-	var cid int64
-	if exists && charID.(int64) != 0 {
-		cid = charID.(int64)
-	} else {
-		accountID, _ := c.Get("account_id")
-		cid = accountID.(int64)
+// GetInventory handles GET /api/equipment/inventory
+func (h *EquipmentHandler) GetInventory(c *gin.Context) {
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
 	}
 
-	inventory, equipped, err := h.svc.GetInventory(c.Request.Context(), cid)
+	inventory, equipped, err := h.svc.GetInventory(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errcode.Msg(errcode.ErrInternal))
 		return
@@ -51,20 +47,71 @@ func (h *EquipmentHandler) Decompose(c *gin.Context) {
 		return
 	}
 
-	charID, exists := c.Get("character_id")
-	var cid int64
-	if exists && charID.(int64) != 0 {
-		cid = charID.(int64)
-	} else {
-		accountID, _ := c.Get("account_id")
-		cid = accountID.(int64)
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
 	}
 
-	exp, gold, err := h.svc.Decompose(c.Request.Context(), cid, req.EquipID)
+	exp, gold, err := h.svc.Decompose(c.Request.Context(), charID, req.EquipID)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrItemNotFound, err.Error())
 		return
 	}
 
 	response.OK(c, gin.H{"exp_gained": exp, "gold_gained": gold})
+}
+
+// Equip handles POST /api/equipment/equip
+func (h *EquipmentHandler) Equip(c *gin.Context) {
+	var req struct {
+		EquipID string `json:"equip_id" binding:"required"`
+		Slot    string `json:"slot" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
+		return
+	}
+
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
+	}
+
+	if err := h.svc.Equip(c.Request.Context(), charID, req.EquipID, req.Slot); err != nil {
+		errMsg := err.Error()
+		switch {
+		case errMsg == "equipment not found in inventory":
+			response.Error(c, http.StatusBadRequest, errcode.ErrItemNotFound, errMsg)
+		case errMsg[:4] == "slot":
+			response.Error(c, http.StatusBadRequest, errcode.ErrSlotMismatch, errMsg)
+		default:
+			response.Error(c, http.StatusBadRequest, errcode.ErrSlotOccupied, errMsg)
+		}
+		return
+	}
+
+	response.OK(c, nil)
+}
+
+// Unequip handles POST /api/equipment/unequip
+func (h *EquipmentHandler) Unequip(c *gin.Context) {
+	var req struct {
+		Slot string `json:"slot" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
+		return
+	}
+
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
+	}
+
+	if err := h.svc.Unequip(c.Request.Context(), charID, req.Slot); err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+
+	response.OK(c, nil)
 }

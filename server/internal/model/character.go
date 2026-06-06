@@ -13,6 +13,8 @@ type Character struct {
 	SkillTickets int64     `json:"skill_tickets" db:"skill_tickets"`
 	ChestCount   int       `json:"chest_count"   db:"chest_count"`
 	ZoneLevel    int       `json:"zone_level"    db:"zone_level"`
+	StageChapter int       `json:"stage_chapter"  db:"stage_chapter"`
+	StageLevel   int       `json:"stage_level"    db:"stage_level"`
 	CreatedAt    time.Time `json:"created_at"    db:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"    db:"updated_at"`
 }

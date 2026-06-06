@@ -18,13 +18,14 @@ import (
 )
 
 type AccountService struct {
-	repo   *repository.AccountRepo
-	redis  *redis.Client
-	jwtCfg config.JWTConfig
+	repo     *repository.AccountRepo
+	charRepo *repository.CharacterRepo
+	redis    *redis.Client
+	jwtCfg   config.JWTConfig
 }
 
-func NewAccountService(repo *repository.AccountRepo, rdb *redis.Client, jwtCfg config.JWTConfig) *AccountService {
-	return &AccountService{repo: repo, redis: rdb, jwtCfg: jwtCfg}
+func NewAccountService(repo *repository.AccountRepo, charRepo *repository.CharacterRepo, rdb *redis.Client, jwtCfg config.JWTConfig) *AccountService {
+	return &AccountService{repo: repo, charRepo: charRepo, redis: rdb, jwtCfg: jwtCfg}
 }
 
 // SendVerificationCode generates a 6-digit code, stores in Redis with 5-min TTL.
@@ -164,8 +165,23 @@ func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*To
 		return nil, fmt.Errorf("create account: %w", err)
 	}
 
-	// Generate tokens (characterID = 0 until character is created in Phase 2)
-	return s.generateTokens(account.ID, 0)
+	// Auto-create character for the new account
+	char := &model.Character{
+		AccountID:    account.ID,
+		Class:        "warrior",
+		Nickname:     "",
+		Level:        1,
+		Exp:          0,
+		Gold:         0,
+		StageChapter: 1,
+		StageLevel:   1,
+	}
+	if err := s.charRepo.Create(ctx, char); err != nil {
+		return nil, fmt.Errorf("create character: %w", err)
+	}
+
+	// Generate tokens with real character ID
+	return s.generateTokens(account.ID, char.ID)
 }
 
 // Login authenticates a user and returns tokens.
@@ -190,8 +206,17 @@ func (s *AccountService) Login(ctx context.Context, req LoginRequest) (*TokenPai
 		return nil, fmt.Errorf("wrong password")
 	}
 
-	// Generate tokens (characterID will be populated in Phase 2)
-	return s.generateTokens(account.ID, 0)
+	// Look up character for this account
+	char, err := s.charRepo.FindByAccountID(ctx, account.ID)
+	if err != nil {
+		return nil, fmt.Errorf("find character: %w", err)
+	}
+	charID := int64(0)
+	if char != nil {
+		charID = char.ID
+	}
+
+	return s.generateTokens(account.ID, charID)
 }
 
 // RefreshAccessToken generates a new access token from a valid refresh token.

@@ -43,6 +43,23 @@ func (s *ChestService) zoneUpgradeCost(level int) int64 {
 	return int64(math.Round(1000 * math.Pow(1.2, float64(level-1))))
 }
 
+// GetChestInfo returns chest count, zone level, and upgrade cost.
+func (s *ChestService) GetChestInfo(ctx context.Context, charID int64) (map[string]interface{}, error) {
+	char, err := s.charRepo.FindByID(ctx, charID)
+	if err != nil || char == nil {
+		return nil, fmt.Errorf("character not found")
+	}
+	cost := int64(0)
+	if char.ZoneLevel < 28 {
+		cost = s.zoneUpgradeCost(char.ZoneLevel)
+	}
+	return map[string]interface{}{
+		"chest_count":   char.ChestCount,
+		"zone_level":    char.ZoneLevel,
+		"upgrade_cost":  cost,
+	}, nil
+}
+
 // OpenChest opens one chest and generates equipment.
 func (s *ChestService) OpenChest(ctx context.Context, charID int64) (*model.Equipment, error) {
 	char, err := s.charRepo.FindByID(ctx, charID)

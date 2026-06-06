@@ -91,7 +91,7 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 		return nil, fmt.Errorf("invalid count: %d", count)
 	}
 
-	tickets, totalPulls, _, err := s.repo.GetSkillData(ctx, charID)
+	tickets, totalPulls, _, skillsJSON, err := s.repo.GetSkillsData(ctx, charID)
 	if err != nil {
 		return nil, fmt.Errorf("get skill data: %w", err)
 	}
@@ -101,6 +101,12 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 
 	shopLevel := s.shopLevelByPulls(totalPulls)
 	available := s.availableQualities(shopLevel)
+
+	// Parse existing skills
+	var skills map[string]model.Skill
+	if err := json.Unmarshal([]byte(skillsJSON), &skills); err != nil || skills == nil {
+		skills = make(map[string]model.Skill)
+	}
 
 	var results []model.Skill
 	for i := 0; i < count; i++ {
@@ -117,18 +123,27 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 		idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(candidates))))
 		cfg := candidates[idx.Int64()]
 
-		results = append(results, model.Skill{
-			ID:      cfg.ID,
-			Name:    cfg.Name,
-			Quality: cfg.Quality,
-			Level:   1,
-			Cards:   1,
-			Coeff:   cfg.BaseCoeff,
-		})
+		// Merge into existing skills: if already owned, add a card; otherwise create new
+		if existing, ok := skills[cfg.ID]; ok {
+			existing.Cards++
+			skills[cfg.ID] = existing
+		} else {
+			skills[cfg.ID] = model.Skill{
+				ID:      cfg.ID,
+				Name:    cfg.Name,
+				Quality: cfg.Quality,
+				Level:   1,
+				Cards:   1,
+				Coeff:   cfg.BaseCoeff,
+			}
+		}
+		results = append(results, skills[cfg.ID])
 	}
 
 	totalPulls += count
-	if err := s.repo.UpdateAfterPull(ctx, charID, tickets-int64(count), totalPulls, ""); err != nil {
+	newSkillsJSON, _ := json.Marshal(skills)
+
+	if err := s.repo.UpdateSkills(ctx, charID, tickets-int64(count), totalPulls, string(newSkillsJSON)); err != nil {
 		return nil, fmt.Errorf("update after pull: %w", err)
 	}
 
@@ -155,4 +170,94 @@ func (s *SkillService) SetSkillSlot(ctx context.Context, charID int64, slot int,
 	newJSON, _ := json.Marshal(slots)
 
 	return s.repo.UpdateSkillSlots(ctx, charID, string(newJSON))
+}
+
+// ListSkills returns the player's owned skills.
+func (s *SkillService) ListSkills(ctx context.Context, charID int64) ([]model.Skill, error) {
+	_, _, _, skillsJSON, err := s.repo.GetSkillsData(ctx, charID)
+	if err != nil {
+		return nil, fmt.Errorf("get skills data: %w", err)
+	}
+
+	var skills map[string]model.Skill
+	if err := json.Unmarshal([]byte(skillsJSON), &skills); err != nil {
+		return nil, fmt.Errorf("parse skills: %w", err)
+	}
+
+	result := make([]model.Skill, 0, len(skills))
+	for _, sk := range skills {
+		result = append(result, sk)
+	}
+	return result, nil
+}
+
+// UpgradeSkill upgrades a skill using duplicate cards.
+func (s *SkillService) UpgradeSkill(ctx context.Context, charID int64, skillID string) (*model.Skill, error) {
+	_, _, _, skillsJSON, err := s.repo.GetSkillsData(ctx, charID)
+	if err != nil {
+		return nil, fmt.Errorf("get skills data: %w", err)
+	}
+
+	var skills map[string]model.Skill
+	if err := json.Unmarshal([]byte(skillsJSON), &skills); err != nil || skills == nil {
+		return nil, fmt.Errorf("skill not found")
+	}
+
+	sk, ok := skills[skillID]
+	if !ok {
+		return nil, fmt.Errorf("skill not found")
+	}
+
+	// Max level check
+	if sk.Level >= 30 {
+		return nil, fmt.Errorf("skill already max level")
+	}
+
+	// Calculate cards needed: ceil(level * 1.15), max 50
+	cardsNeeded := int(math.Ceil(float64(sk.Level) * 1.15))
+	if cardsNeeded > 50 {
+		cardsNeeded = 50
+	}
+
+	if sk.Cards < cardsNeeded {
+		return nil, fmt.Errorf("insufficient cards for upgrade: need %d, have %d", cardsNeeded, sk.Cards)
+	}
+
+	// Find skill config for base coeff
+	var baseCoeff float64
+	for _, sc := range model.SkillPool {
+		if sc.ID == skillID {
+			baseCoeff = sc.BaseCoeff
+			break
+		}
+	}
+
+	sk.Cards -= cardsNeeded
+	sk.Level++
+	sk.Coeff = s.calcSkillCoeff(baseCoeff, sk.Level)
+	skills[skillID] = sk
+
+	newSkillsJSON, _ := json.Marshal(skills)
+	if err := s.repo.UpdateSkillItem(ctx, charID, string(newSkillsJSON)); err != nil {
+		return nil, fmt.Errorf("update skill: %w", err)
+	}
+
+	return &sk, nil
+}
+
+// ShopInfo returns shop level, total pulls, and available qualities.
+func (s *SkillService) ShopInfo(ctx context.Context, charID int64) (map[string]interface{}, error) {
+	_, totalPulls, _, _, err := s.repo.GetSkillsData(ctx, charID)
+	if err != nil {
+		return nil, fmt.Errorf("get skills data: %w", err)
+	}
+
+	shopLevel := s.shopLevelByPulls(totalPulls)
+	available := s.availableQualities(shopLevel)
+
+	return map[string]interface{}{
+		"shop_level":        shopLevel,
+		"total_pulls":       totalPulls,
+		"available_qualities": available,
+	}, nil
 }

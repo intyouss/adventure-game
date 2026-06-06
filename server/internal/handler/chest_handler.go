@@ -18,6 +18,22 @@ func NewChestHandler(svc *service.ChestService) *ChestHandler {
 	return &ChestHandler{svc: svc}
 }
 
+// GetChestInfo handles GET /api/chest/info
+func (h *ChestHandler) GetChestInfo(c *gin.Context) {
+	charID := c.GetInt64("character_id")
+	if charID == 0 {
+		charID = c.GetInt64("account_id")
+	}
+
+	info, err := h.svc.GetChestInfo(c.Request.Context(), charID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+
+	response.OK(c, info)
+}
+
 func (h *ChestHandler) OpenChest(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 	if charID == 0 {
