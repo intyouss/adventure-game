@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -13,13 +13,14 @@ import (
 )
 
 type ChestService struct {
-	charRepo  *repository.CharacterRepo
-	equipRepo *repository.EquipmentRepo
-	equipSvc  *EquipmentService
+	charRepo    *repository.CharacterRepo
+	equipRepo   *repository.EquipmentRepo
+	equipSvc    *EquipmentService
+	currencySvc *CurrencyService
 }
 
-func NewChestService(charRepo *repository.CharacterRepo, equipRepo *repository.EquipmentRepo, equipSvc *EquipmentService) *ChestService {
-	return &ChestService{charRepo: charRepo, equipRepo: equipRepo, equipSvc: equipSvc}
+func NewChestService(charRepo *repository.CharacterRepo, equipRepo *repository.EquipmentRepo, equipSvc *EquipmentService, currencySvc *CurrencyService) *ChestService {
+	return &ChestService{charRepo: charRepo, equipRepo: equipRepo, equipSvc: equipSvc, currencySvc: currencySvc}
 }
 
 func (s *ChestService) zoneMaxQuality(zoneLevel int) int {
@@ -54,47 +55,54 @@ func (s *ChestService) GetChestInfo(ctx context.Context, charID int64) (map[stri
 		cost = s.zoneUpgradeCost(char.ZoneLevel)
 	}
 	return map[string]interface{}{
-		"chest_count":   char.ChestCount,
-		"zone_level":    char.ZoneLevel,
-		"upgrade_cost":  cost,
+		"chest_count":  char.ChestCount,
+		"zone_level":   char.ZoneLevel,
+		"upgrade_cost": cost,
 	}, nil
 }
 
-// OpenChest opens one chest and generates equipment.
-func (s *ChestService) OpenChest(ctx context.Context, charID int64) (*model.Equipment, error) {
+// OpenChest opens count chests and generates equipment.
+func (s *ChestService) OpenChest(ctx context.Context, charID int64, count int) ([]model.Equipment, int, error) {
+	if count < 1 || count > 100 {
+		return nil, 0, fmt.Errorf("invalid count")
+	}
+
 	char, err := s.charRepo.FindByID(ctx, charID)
 	if err != nil || char == nil {
-		return nil, fmt.Errorf("character not found")
+		return nil, 0, fmt.Errorf("character not found")
 	}
-	if char.ChestCount < 1 {
-		return nil, fmt.Errorf("insufficient chests")
+	if char.ChestCount < count {
+		return nil, 0, fmt.Errorf("insufficient chests")
 	}
 
 	maxQ := s.zoneMaxQuality(char.ZoneLevel)
-	quality := s.rollChestQuality(maxQ)
 
-	// Random slot
-	idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(model.EquipmentSlots))))
-	slot := model.EquipmentSlots[idx.Int64()]
+	var results []model.Equipment
+	for i := 0; i < count; i++ {
+		quality := s.rollChestQuality(maxQ)
+		idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(model.EquipmentSlots))))
+		slot := model.EquipmentSlots[idx.Int64()]
 
-	equip, err := s.equipSvc.GenerateEquipment(slot, quality)
-	if err != nil {
-		return nil, fmt.Errorf("generate: %w", err)
-	}
+		equip, err := s.equipSvc.GenerateEquipment(slot, quality)
+		if err != nil {
+			return nil, 0, fmt.Errorf("generate: %w", err)
+		}
 
-	// Add to inventory
-	eqJSON, _ := json.Marshal(equip)
-	if err := s.equipRepo.AddEquipment(ctx, charID, string(eqJSON)); err != nil {
-		return nil, fmt.Errorf("add equipment: %w", err)
+		// Add to inventory
+		eqJSON, _ := json.Marshal(equip)
+		if err := s.equipRepo.AddEquipment(ctx, charID, string(eqJSON)); err != nil {
+			return nil, 0, fmt.Errorf("add equipment: %w", err)
+		}
+		results = append(results, equip)
 	}
 
 	// Decrement chest count
-	char.ChestCount--
+	char.ChestCount -= count
 	if err := s.charRepo.UpdateChestFields(ctx, charID, char.ChestCount, char.ZoneLevel, char.Gold); err != nil {
-		return nil, fmt.Errorf("update chest count: %w", err)
+		return nil, 0, fmt.Errorf("update chest count: %w", err)
 	}
 
-	return &equip, nil
+	return results, char.ChestCount, nil
 }
 
 // UpgradeZone levels up the chest zone.
@@ -104,12 +112,12 @@ func (s *ChestService) UpgradeZone(ctx context.Context, charID int64) (int, int6
 		return 0, 0, fmt.Errorf("character not found")
 	}
 	if char.ZoneLevel >= 28 {
-		return char.ZoneLevel, 0, fmt.Errorf("zone already max level")
+		return char.ZoneLevel, char.Gold, fmt.Errorf("zone already max level")
 	}
 
 	cost := s.zoneUpgradeCost(char.ZoneLevel)
 	if char.Gold < cost {
-		return char.ZoneLevel, cost, fmt.Errorf("insufficient gold")
+		return char.ZoneLevel, char.Gold, fmt.Errorf("insufficient gold")
 	}
 
 	char.Gold -= cost
@@ -119,11 +127,35 @@ func (s *ChestService) UpgradeZone(ctx context.Context, charID int64) (int, int6
 		return 0, 0, fmt.Errorf("update zone: %w", err)
 	}
 
-	return char.ZoneLevel, cost, nil
+	// Write currency log
+	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "gold", -cost, "chest_zone_upgrade")
+
+	return char.ZoneLevel, char.Gold, nil
 }
 
 func (s *ChestService) rollChestQuality(maxQ int) int {
-	// Uniform distribution among available qualities
-	n, _ := rand.Int(rand.Reader, big.NewInt(int64(maxQ)))
-	return int(n.Int64()) + 1
+	// Weighted distribution favoring lower qualities
+	weights := map[int]float64{
+		1: 0.40, 2: 0.25, 3: 0.15, 4: 0.10, 5: 0.05, 6: 0.03, 7: 0.02,
+	}
+	available := make([]int, 0)
+	for q := 1; q <= maxQ; q++ {
+		available = append(available, q)
+	}
+
+	total := 0.0
+	for _, q := range available {
+		total += weights[q]
+	}
+	r, _ := rand.Int(rand.Reader, big.NewInt(10000))
+	roll := float64(r.Int64()) / 10000.0 * total
+
+	cumulative := 0.0
+	for _, q := range available {
+		cumulative += weights[q]
+		if roll < cumulative {
+			return q
+		}
+	}
+	return available[len(available)-1]
 }

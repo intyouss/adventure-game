@@ -5,7 +5,7 @@ import (
 )
 
 func TestZoneMaxQuality(t *testing.T) {
-	svc := NewChestService(nil, nil, nil)
+	svc := NewChestService(nil, nil, nil, nil)
 	tests := []struct {
 		zoneLevel int
 		wantMax   int
@@ -22,7 +22,7 @@ func TestZoneMaxQuality(t *testing.T) {
 }
 
 func TestZoneUpgradeCost(t *testing.T) {
-	svc := NewChestService(nil, nil, nil)
+	svc := NewChestService(nil, nil, nil, nil)
 	tests := []struct {
 		level int
 		want  int64

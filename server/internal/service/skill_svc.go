@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -13,68 +13,52 @@ import (
 )
 
 type SkillService struct {
-	repo     *repository.SkillRepo
-	charRepo *repository.CharacterRepo
+	repo        *repository.SkillRepo
+	charRepo    *repository.CharacterRepo
+	currencySvc *CurrencyService
 }
 
-func NewSkillService(repo *repository.SkillRepo, charRepo *repository.CharacterRepo) *SkillService {
-	return &SkillService{repo: repo, charRepo: charRepo}
-}
-
-var qualityProbabilities = map[int]float64{
-	1: 0.50, 2: 0.30, 3: 0.12, 4: 0.05, 5: 0.02, 6: 0.008, 7: 0.002,
+func NewSkillService(repo *repository.SkillRepo, charRepo *repository.CharacterRepo, currencySvc *CurrencyService) *SkillService {
+	return &SkillService{repo: repo, charRepo: charRepo, currencySvc: currencySvc}
 }
 
 // shopLevelByPulls computes shop level from total pulls.
+// Level N requires 300 * 1.25^(N-1) cumulative pulls.
 func (s *SkillService) shopLevelByPulls(totalPulls int) int {
-	level := int(math.Sqrt(float64(totalPulls)/300)) + 1
-	if level > 28 {
-		level = 28
+	if totalPulls <= 0 {
+		return 1
 	}
-	return level
+	for lv := 1; lv <= model.MaxShopLevel; lv++ {
+		required := int(math.Round(300 * math.Pow(1.25, float64(lv-1))))
+		if totalPulls < required {
+			return lv
+		}
+	}
+	return model.MaxShopLevel
 }
 
-// availableQualities returns the list of quality levels available at a given shop level.
-func (s *SkillService) availableQualities(shopLevel int) []int {
-	var maxQ int
-	switch {
-	case shopLevel <= 4:
-		maxQ = 2
-	case shopLevel <= 8:
-		maxQ = 3
-	case shopLevel <= 12:
-		maxQ = 4
-	case shopLevel <= 16:
-		maxQ = 5
-	case shopLevel <= 20:
-		maxQ = 6
-	default:
-		maxQ = 7
-	}
-	qualities := make([]int, 0, maxQ)
-	for q := 1; q <= maxQ; q++ {
-		qualities = append(qualities, q)
-	}
-	return qualities
-}
-
-// rollQuality picks a random quality from the available pool using weighted probabilities.
-func (s *SkillService) rollQuality(available []int) int {
+// rollQuality picks a random quality using weighted probabilities for the shop level.
+func (s *SkillService) rollQuality(shopLevel int) int {
+	weights := model.GachaWeights(shopLevel)
 	total := 0.0
-	for _, q := range available {
-		total += qualityProbabilities[q]
+	for _, w := range weights {
+		total += w
 	}
 	r, _ := rand.Int(rand.Reader, big.NewInt(10000))
 	roll := float64(r.Int64()) / 10000.0 * total
 
 	cumulative := 0.0
-	for _, q := range available {
-		cumulative += qualityProbabilities[q]
-		if roll < cumulative {
-			return q
+	// Iterate in quality order 1..5
+	for q := 1; q <= model.MaxSkillQuality; q++ {
+		if w, ok := weights[q]; ok {
+			cumulative += w
+			if roll < cumulative {
+				return q
+			}
 		}
 	}
-	return available[len(available)-1]
+	// Fallback
+	return 1
 }
 
 // calcSkillCoeff calculates skill coefficient at a given level (5% growth per level).
@@ -86,21 +70,22 @@ func (s *SkillService) calcSkillCoeff(baseCoeff float64, level int) float64 {
 }
 
 // GachaPull performs one or more skill pulls.
-func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) ([]model.Skill, error) {
+func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) ([]model.Skill, int64, error) {
 	if count < 1 || count > 10 {
-		return nil, fmt.Errorf("invalid count: %d", count)
+		return nil, 0, fmt.Errorf("invalid count: %d", count)
 	}
 
 	tickets, totalPulls, _, skillsJSON, err := s.repo.GetSkillsData(ctx, charID)
 	if err != nil {
-		return nil, fmt.Errorf("get skill data: %w", err)
+		return nil, 0, fmt.Errorf("get skill data: %w", err)
 	}
 	if tickets < int64(count) {
-		return nil, fmt.Errorf("insufficient skill tickets")
+		return nil, 0, fmt.Errorf("insufficient skill tickets")
 	}
 
+	newTickets := tickets - int64(count)
+
 	shopLevel := s.shopLevelByPulls(totalPulls)
-	available := s.availableQualities(shopLevel)
 
 	// Parse existing skills
 	var skills map[string]model.Skill
@@ -110,7 +95,8 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 
 	var results []model.Skill
 	for i := 0; i < count; i++ {
-		quality := s.rollQuality(available)
+		quality := s.rollQuality(shopLevel)
+		// Find skills matching quality
 		var candidates []model.SkillConfig
 		for _, sc := range model.SkillPool {
 			if sc.Quality == quality {
@@ -118,12 +104,13 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 			}
 		}
 		if len(candidates) == 0 {
-			continue
+			// Fallback: select from all
+			candidates = model.SkillPool
 		}
 		idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(candidates))))
 		cfg := candidates[idx.Int64()]
 
-		// Merge into existing skills: if already owned, add a card; otherwise create new
+		// Merge into existing skills
 		if existing, ok := skills[cfg.ID]; ok {
 			existing.Cards++
 			skills[cfg.ID] = existing
@@ -143,32 +130,45 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 	totalPulls += count
 	newSkillsJSON, _ := json.Marshal(skills)
 
-	if err := s.repo.UpdateSkills(ctx, charID, tickets-int64(count), totalPulls, string(newSkillsJSON)); err != nil {
-		return nil, fmt.Errorf("update after pull: %w", err)
+	if err := s.repo.UpdateSkills(ctx, charID, newTickets, totalPulls, string(newSkillsJSON)); err != nil {
+		return nil, 0, fmt.Errorf("update after pull: %w", err)
 	}
 
-	return results, nil
+	// Write currency log for tickets spent
+	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "skill_ticket", -int64(count), "gacha_pull")
+
+	return results, newTickets, nil
 }
 
 // SetSkillSlot assigns a skill to a slot (1-4).
 func (s *SkillService) SetSkillSlot(ctx context.Context, charID int64, slot int, skillID string) error {
-	if slot < 1 || slot > 4 {
+	if slot < 0 || slot > 3 {
 		return fmt.Errorf("invalid slot: %d", slot)
 	}
 
-	_, _, slotsJSON, err := s.repo.GetSkillData(ctx, charID)
+	_, _, slotsJSON, _, err := s.repo.GetSkillsData(ctx, charID)
 	if err != nil {
 		return fmt.Errorf("get skill data: %w", err)
 	}
 
-	var slots map[string]string
+	// Slots stored as JSON array [id1, id2, id3, id4] with null for empty
+	var slots []*string
 	if err := json.Unmarshal([]byte(slotsJSON), &slots); err != nil || slots == nil {
-		slots = map[string]string{"1": "", "2": "", "3": "", "4": ""}
+		slots = make([]*string, 4)
 	}
-	slotKey := fmt.Sprintf("%d", slot)
-	slots[slotKey] = skillID
-	newJSON, _ := json.Marshal(slots)
+	// Ensure length 4
+	for len(slots) < 4 {
+		slots = append(slots, nil)
+	}
 
+	if skillID == "" {
+		slots[slot] = nil
+	} else {
+		sid := skillID
+		slots[slot] = &sid
+	}
+
+	newJSON, _ := json.Marshal(slots)
 	return s.repo.UpdateSkillSlots(ctx, charID, string(newJSON))
 }
 
@@ -189,6 +189,22 @@ func (s *SkillService) ListSkills(ctx context.Context, charID int64) ([]model.Sk
 		result = append(result, sk)
 	}
 	return result, nil
+}
+
+// GetEquippedSkills returns the equipped skill slots as an array [id1, id2, id3, id4].
+func (s *SkillService) GetEquippedSkills(ctx context.Context, charID int64) ([]*string, error) {
+	_, _, slotsJSON, _, err := s.repo.GetSkillsData(ctx, charID)
+	if err != nil {
+		return nil, fmt.Errorf("get skill data: %w", err)
+	}
+	var slots []*string
+	if err := json.Unmarshal([]byte(slotsJSON), &slots); err != nil || slots == nil {
+		slots = make([]*string, 4)
+	}
+	for len(slots) < 4 {
+		slots = append(slots, nil)
+	}
+	return slots, nil
 }
 
 // UpgradeSkill upgrades a skill using duplicate cards.
@@ -245,7 +261,7 @@ func (s *SkillService) UpgradeSkill(ctx context.Context, charID int64, skillID s
 	return &sk, nil
 }
 
-// ShopInfo returns shop level, total pulls, and available qualities.
+// ShopInfo returns shop level, total pulls, pulls to next level, and available qualities.
 func (s *SkillService) ShopInfo(ctx context.Context, charID int64) (map[string]interface{}, error) {
 	_, totalPulls, _, _, err := s.repo.GetSkillsData(ctx, charID)
 	if err != nil {
@@ -253,11 +269,17 @@ func (s *SkillService) ShopInfo(ctx context.Context, charID int64) (map[string]i
 	}
 
 	shopLevel := s.shopLevelByPulls(totalPulls)
-	available := s.availableQualities(shopLevel)
+	pullsToNext := 0
+	if shopLevel < model.MaxShopLevel {
+		required := int(math.Round(300 * math.Pow(1.25, float64(shopLevel))))
+		if totalPulls < required {
+			pullsToNext = required - totalPulls
+		}
+	}
 
 	return map[string]interface{}{
-		"shop_level":        shopLevel,
-		"total_pulls":       totalPulls,
-		"available_qualities": available,
+		"shop_level":    shopLevel,
+		"total_pulls":   totalPulls,
+		"pulls_to_next": pullsToNext,
 	}, nil
 }

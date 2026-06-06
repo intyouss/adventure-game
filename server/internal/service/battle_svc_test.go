@@ -8,7 +8,15 @@ import (
 
 func TestPlanAWaveCountMismatch(t *testing.T) {
 	svc := NewBattleService(nil)
-	summary := model.BattleSummary{Waves: []model.WaveResult{{Wave: 1}}}
+	summary := model.BattleSummary{
+		Waves:        []model.WaveResult{{Wave: 1}},
+		HPBefore:     100,
+		HPAfter:      99,
+		BossDefeated: true,
+		MonsterKills: 15,
+		ClearTimeMs:  30000,
+		PlayerStats:  model.PlayerBattleStats{ATK: 10, DEF: 5, HP: 100, AtkSpeed: 1.0, CritRate: 0, CritDmg: 1.5},
+	}
 	cfg := model.StageConfig{Waves: make([]model.WaveConfig, 5)}
 
 	result := svc.PlanA(summary, cfg)
@@ -21,7 +29,11 @@ func TestPlanATooFast(t *testing.T) {
 	svc := NewBattleService(nil)
 	summary := model.BattleSummary{
 		ClearTimeMs: 100,
-		PlayerStats: model.PlayerBattleStats{ATK: 10, AtkSpeed: 1.0, CritRate: 0, CritDmg: 1.5},
+		HPBefore:    100,
+		HPAfter:     99,
+		BossDefeated: true,
+		MonsterKills: 15,
+		PlayerStats: model.PlayerBattleStats{ATK: 10, AtkSpeed: 1.0, CritRate: 0, CritDmg: 1.5, HP: 100},
 		Waves:       []model.WaveResult{{Wave: 1}, {Wave: 2}, {Wave: 3}, {Wave: 4}, {Wave: 5}},
 	}
 	cfg := model.StageConfig{Waves: make([]model.WaveConfig, 5)}
@@ -36,8 +48,12 @@ func TestPlanAPass(t *testing.T) {
 	svc := NewBattleService(nil)
 	summary := model.BattleSummary{
 		ClearTimeMs:      30000,
-		TotalDamageDealt: 300,
-		PlayerStats:      model.PlayerBattleStats{ATK: 10, AtkSpeed: 1.0, CritRate: 0, CritDmg: 1.5},
+		TotalDamageDealt: 200,
+		HPBefore:         100,
+		HPAfter:          99,
+		BossDefeated:     true,
+		MonsterKills:     15,
+		PlayerStats:      model.PlayerBattleStats{ATK: 10, AtkSpeed: 1.0, CritRate: 0, CritDmg: 1.5, HP: 100, DEF: 5},
 		Waves:            []model.WaveResult{{Wave: 1}, {Wave: 2}, {Wave: 3}, {Wave: 4}, {Wave: 5}},
 	}
 	cfg := model.StageConfig{Waves: make([]model.WaveConfig, 5)}
@@ -51,12 +67,18 @@ func TestPlanAPass(t *testing.T) {
 func TestSimulateHPWithinTolerance(t *testing.T) {
 	svc := NewBattleService(nil)
 	summary := model.BattleSummary{
-		TotalDamageTaken: 29,
-		PlayerStats:      model.PlayerBattleStats{HP: 100, DEF: 5},
+		TotalDamageTaken: 5,
+		HPBefore:         100,
+		HPAfter:          95,
+		BossDefeated:     true,
+		MonsterKills:     3,
+		PlayerStats:      model.PlayerBattleStats{HP: 100, DEF: 50, ATK: 10, AtkSpeed: 1.0, CritRate: 0, CritDmg: 1.5},
+		Waves:            []model.WaveResult{{Wave: 1, IsBoss: false}, {Wave: 2, IsBoss: true}},
 	}
 	cfg := model.StageConfig{
 		Waves: []model.WaveConfig{
-			{Monsters: []model.MonsterConfig{{Count: 3, ATK: 10, DEF: 2}}},
+			{Monsters: []model.MonsterConfig{{Count: 3, ATK: 5, DEF: 2, HP: 30}}},
+			{IsBoss: true, Monsters: []model.MonsterConfig{{Count: 1, ATK: 5, DEF: 3, HP: 50}}},
 		},
 	}
 

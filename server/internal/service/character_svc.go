@@ -1,4 +1,4 @@
-﻿package service
+package service
 
 import (
 	"context"
@@ -55,15 +55,14 @@ func (s *CharacterService) CalcStats(c *model.Character) model.FinalStats {
 }
 
 // CalcCP computes Combat Power (CP).
-func (s *CharacterService) CalcCP(stats model.FinalStats) float64 {
-	baseDPS := float64(stats.ATK) * stats.AtkSpeed
-	critBonus := stats.CritRate * (stats.CritDmg - 1.0)
-	return math.Round(baseDPS*(1.0+critBonus)*10) / 10
+// Formula: (ATK * 2 + DEF * 1.5 + HP * 0.5) * (1 + level * 0.1)
+func (s *CharacterService) CalcCP(stats model.FinalStats, level int) float64 {
+	return model.CalcCP(stats, level)
 }
 
 // ExpToNextLevel returns experience needed to reach the next level.
 func (s *CharacterService) ExpToNextLevel(level int) int64 {
-	return int64(math.Round(100 * math.Pow(1.15, float64(level-1))))
+	return model.ExpToNextLevel(level)
 }
 
 // AddExp adds experience and handles level-ups.
@@ -79,8 +78,8 @@ func (s *CharacterService) AddExp(ctx context.Context, charID int64, amount int6
 	c.Exp += amount
 
 	// Check for level-ups (max level = 150)
-	for c.Level < 150 {
-		needed := s.ExpToNextLevel(c.Level)
+	for c.Level < model.MaxLevel {
+		needed := model.ExpToNextLevel(c.Level)
 		if c.Exp < needed {
 			break
 		}
@@ -118,10 +117,10 @@ func (s *CharacterService) ToResponse(c *model.Character) CharacterResponse {
 		Nickname:     c.Nickname,
 		Level:        c.Level,
 		Exp:          c.Exp,
-		ExpToNext:    s.ExpToNextLevel(c.Level),
+		ExpToNext:    model.ExpToNextLevel(c.Level),
 		Gold:         c.Gold,
 		SkillTickets: c.SkillTickets,
 		Stats:        stats,
-		CP:           s.CalcCP(stats),
+		CP:           model.CalcCP(stats, c.Level),
 	}
 }

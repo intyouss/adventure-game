@@ -1,8 +1,10 @@
-﻿package service
+package service
 
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/adventure-game/server/internal/model"
 	"github.com/adventure-game/server/internal/repository"
@@ -16,8 +18,30 @@ func NewStageService(charRepo *repository.CharacterRepo) *StageService {
 	return &StageService{charRepo: charRepo}
 }
 
+// parseStageID splits "1-5" into chapter, level.
+func parseStageID(stageID string) (int, int, error) {
+	parts := strings.SplitN(stageID, "-", 2)
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid stage_id: %s", stageID)
+	}
+	chapter, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid stage_id chapter: %s", parts[0])
+	}
+	level, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid stage_id level: %s", parts[1])
+	}
+	return chapter, level, nil
+}
+
 // GetStageConfig returns the stage config if the player has unlocked it.
-func (s *StageService) GetStageConfig(ctx context.Context, charID int64, chapter, level int) (*model.StageConfig, error) {
+func (s *StageService) GetStageConfig(ctx context.Context, charID int64, stageID string) (*model.StageConfig, error) {
+	chapter, level, err := parseStageID(stageID)
+	if err != nil {
+		return nil, err
+	}
+
 	char, err := s.charRepo.FindByID(ctx, charID)
 	if err != nil || char == nil {
 		return nil, fmt.Errorf("character not found")
@@ -54,7 +78,12 @@ func (s *StageService) GetProgress(ctx context.Context, charID int64) (map[strin
 }
 
 // ClaimRewards claims stage rewards and advances progress.
-func (s *StageService) ClaimRewards(ctx context.Context, charID int64, chapter, level int) (*model.StageRewards, error) {
+func (s *StageService) ClaimRewards(ctx context.Context, charID int64, stageID string) (*model.StageRewards, error) {
+	chapter, level, err := parseStageID(stageID)
+	if err != nil {
+		return nil, err
+	}
+
 	rewards := model.CalculateRewards(chapter, level)
 	char, err := s.charRepo.FindByID(ctx, charID)
 	if err != nil || char == nil {

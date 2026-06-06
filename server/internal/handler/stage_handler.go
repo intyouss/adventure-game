@@ -1,9 +1,7 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -23,22 +21,10 @@ func NewStageHandler(svc *service.StageService) *StageHandler {
 // GetStageConfig handles GET /api/stage/start?stage_id=1-3
 func (h *StageHandler) GetStageConfig(c *gin.Context) {
 	stageID := c.DefaultQuery("stage_id", "1-1")
-	parts := strings.SplitN(stageID, "-", 2)
-	chapter := 1
-	level := 1
-	if len(parts) >= 1 {
-		chapter, _ = strconv.Atoi(parts[0])
-	}
-	if len(parts) >= 2 {
-		level, _ = strconv.Atoi(parts[1])
-	}
 
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
-	cfg, err := h.svc.GetStageConfig(c.Request.Context(), charID, chapter, level)
+	cfg, err := h.svc.GetStageConfig(c.Request.Context(), charID, stageID)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrStageNotUnlocked, err.Error())
 		return
@@ -49,9 +35,6 @@ func (h *StageHandler) GetStageConfig(c *gin.Context) {
 // GetProgress handles GET /api/stage/progress
 func (h *StageHandler) GetProgress(c *gin.Context) {
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	progress, err := h.svc.GetProgress(c.Request.Context(), charID)
 	if err != nil {
@@ -62,10 +45,10 @@ func (h *StageHandler) GetProgress(c *gin.Context) {
 }
 
 // ClaimRewards handles POST /api/stage/complete
+// Accepts {"stage_id": "1-5"}
 func (h *StageHandler) ClaimRewards(c *gin.Context) {
 	var req struct {
-		Chapter int `json:"chapter"`
-		Level   int `json:"level"`
+		StageID string `json:"stage_id" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
@@ -73,11 +56,8 @@ func (h *StageHandler) ClaimRewards(c *gin.Context) {
 	}
 
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
-	rewards, err := h.svc.ClaimRewards(c.Request.Context(), charID, req.Chapter, req.Level)
+	rewards, err := h.svc.ClaimRewards(c.Request.Context(), charID, req.StageID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
 		return

@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
@@ -21,9 +21,6 @@ func NewChestHandler(svc *service.ChestService) *ChestHandler {
 // GetChestInfo handles GET /api/chest/info
 func (h *ChestHandler) GetChestInfo(c *gin.Context) {
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	info, err := h.svc.GetChestInfo(c.Request.Context(), charID)
 	if err != nil {
@@ -34,13 +31,19 @@ func (h *ChestHandler) GetChestInfo(c *gin.Context) {
 	response.OK(c, info)
 }
 
+// OpenChest handles POST /api/chest/open
+// Accepts {"count": N}. Returns {"results": [...], "chests_remaining": N}
 func (h *ChestHandler) OpenChest(c *gin.Context) {
-	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
+	var req struct {
+		Count int `json:"count"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Count < 1 {
+		req.Count = 1
 	}
 
-	equip, err := h.svc.OpenChest(c.Request.Context(), charID)
+	charID := c.GetInt64("character_id")
+
+	results, remaining, err := h.svc.OpenChest(c.Request.Context(), charID, req.Count)
 	if err != nil {
 		if err.Error() == "insufficient chests" {
 			response.Error(c, http.StatusBadRequest, errcode.ErrInsufficientChests, errcode.Msg(errcode.ErrInsufficientChests))
@@ -50,16 +53,18 @@ func (h *ChestHandler) OpenChest(c *gin.Context) {
 		return
 	}
 
-	response.OK(c, equip)
+	response.OK(c, gin.H{
+		"results":          results,
+		"chests_remaining": remaining,
+	})
 }
 
+// UpgradeZone handles POST /api/chest/upgrade_zone
+// Returns {"new_zone_level": N, "gold_remaining": N}
 func (h *ChestHandler) UpgradeZone(c *gin.Context) {
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
-	newLevel, cost, err := h.svc.UpgradeZone(c.Request.Context(), charID)
+	newLevel, goldRemaining, err := h.svc.UpgradeZone(c.Request.Context(), charID)
 	if err != nil {
 		if err.Error() == "insufficient gold" {
 			response.Error(c, http.StatusBadRequest, errcode.ErrInsufficientGold, errcode.Msg(errcode.ErrInsufficientGold))
@@ -73,5 +78,8 @@ func (h *ChestHandler) UpgradeZone(c *gin.Context) {
 		return
 	}
 
-	response.OK(c, gin.H{"zone_level": newLevel, "cost": cost})
+	response.OK(c, gin.H{
+		"new_zone_level": newLevel,
+		"gold_remaining": goldRemaining,
+	})
 }

@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
@@ -22,7 +22,6 @@ func NewAccountHandler(svc *service.AccountService) *AccountHandler {
 func (h *AccountHandler) SendCode(c *gin.Context) {
 	var req struct {
 		Target string `json:"target" binding:"required"`
-		Type   string `json:"type" binding:"required,oneof=phone email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
@@ -42,6 +41,7 @@ func (h *AccountHandler) SendCode(c *gin.Context) {
 }
 
 // Register handles POST /api/auth/register
+// Accepts: phone/email/password/code/nickname
 func (h *AccountHandler) Register(c *gin.Context) {
 	var req service.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -52,8 +52,8 @@ func (h *AccountHandler) Register(c *gin.Context) {
 	tokens, err := h.svc.Register(c.Request.Context(), req)
 	if err != nil {
 		switch err.Error() {
-		case "invalid target":
-			response.Error(c, http.StatusBadRequest, errcode.ErrInvalidTarget, errcode.Msg(errcode.ErrInvalidTarget))
+		case "phone/email required":
+			response.Error(c, http.StatusBadRequest, errcode.ErrPhoneRequired, errcode.Msg(errcode.ErrPhoneRequired))
 		case "already registered":
 			response.Error(c, http.StatusConflict, errcode.ErrAlreadyRegistered, errcode.Msg(errcode.ErrAlreadyRegistered))
 		case "invalid or expired code", "wrong code", "too many attempts":
@@ -68,6 +68,7 @@ func (h *AccountHandler) Register(c *gin.Context) {
 }
 
 // Login handles POST /api/auth/login
+// Accepts: account/password
 func (h *AccountHandler) Login(c *gin.Context) {
 	var req service.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

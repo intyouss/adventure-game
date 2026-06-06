@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"net/http"
@@ -19,6 +19,7 @@ func NewSkillHandler(svc *service.SkillService) *SkillHandler {
 }
 
 // Gacha handles POST /api/skill/gacha
+// Returns {"results": [...], "skill_tickets_remaining": N}
 func (h *SkillHandler) Gacha(c *gin.Context) {
 	var req struct {
 		Count int `json:"count"`
@@ -31,11 +32,8 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 	}
 
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
-	results, err := h.svc.GachaPull(c.Request.Context(), charID, req.Count)
+	results, remaining, err := h.svc.GachaPull(c.Request.Context(), charID, req.Count)
 	if err != nil {
 		if err.Error() == "insufficient skill tickets" {
 			response.Error(c, http.StatusBadRequest, errcode.ErrInsufficientTicket, errcode.Msg(errcode.ErrInsufficientTicket))
@@ -45,7 +43,10 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 		return
 	}
 
-	response.OK(c, gin.H{"skills": results})
+	response.OK(c, gin.H{
+		"results":                 results,
+		"skill_tickets_remaining": remaining,
+	})
 }
 
 // SetSkillSlot handles POST /api/skill/equip
@@ -60,9 +61,6 @@ func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 	}
 
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	if err := h.svc.SetSkillSlot(c.Request.Context(), charID, req.Slot, req.SkillID); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrSkillSlotOccupied, err.Error())
@@ -75,9 +73,6 @@ func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 // ListSkills handles GET /api/skill/list
 func (h *SkillHandler) ListSkills(c *gin.Context) {
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	skills, err := h.svc.ListSkills(c.Request.Context(), charID)
 	if err != nil {
@@ -86,6 +81,30 @@ func (h *SkillHandler) ListSkills(c *gin.Context) {
 	}
 
 	response.OK(c, gin.H{"skills": skills})
+}
+
+// GetSkillSlots handles GET /api/skill/slots
+// Returns {"equipped": [id1, null, id3, null]}
+func (h *SkillHandler) GetSkillSlots(c *gin.Context) {
+	charID := c.GetInt64("character_id")
+
+	slots, err := h.svc.GetEquippedSkills(c.Request.Context(), charID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+
+	// Convert *string to interface{} for JSON null rendering
+	result := make([]interface{}, len(slots))
+	for i, s := range slots {
+		if s == nil {
+			result[i] = nil
+		} else {
+			result[i] = *s
+		}
+	}
+
+	response.OK(c, gin.H{"equipped": result})
 }
 
 // UpgradeSkill handles POST /api/skill/upgrade
@@ -99,9 +118,6 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 	}
 
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	skill, err := h.svc.UpgradeSkill(c.Request.Context(), charID, req.SkillID)
 	if err != nil {
@@ -111,7 +127,7 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, errcode.ErrSkillNotFound, errMsg)
 		case errMsg == "skill already max level":
 			response.Error(c, http.StatusBadRequest, errcode.ErrSkillMaxLevel, errMsg)
-		case errMsg[:22] == "insufficient cards for":
+		case len(errMsg) >= 22 && errMsg[:22] == "insufficient cards for":
 			response.Error(c, http.StatusBadRequest, errcode.ErrInsufficientCards, errMsg)
 		default:
 			response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errMsg)
@@ -125,9 +141,6 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 // ShopInfo handles GET /api/skill/shop_info
 func (h *SkillHandler) ShopInfo(c *gin.Context) {
 	charID := c.GetInt64("character_id")
-	if charID == 0 {
-		charID = c.GetInt64("account_id")
-	}
 
 	info, err := h.svc.ShopInfo(c.Request.Context(), charID)
 	if err != nil {

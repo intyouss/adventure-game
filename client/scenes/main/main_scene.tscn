@@ -1,4 +1,4 @@
-﻿[gd_scene load_steps=2 format=3 uid=""]
+[gd_scene load_steps=2 format=3 uid=""]
 
 [ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
 
@@ -57,3 +57,52 @@ anchors_preset = -1
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_top = 60.0
+offset_bottom = -50.0
+
+[node name="EquipmentTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="SkillTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="ChestTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="StageTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="LeaderboardTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="BottomNav" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -50.0
+
+[node name="BtnEquip" type="Button" parent="BottomNav"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "装备"
+
+[node name="BtnSkill" type="Button" parent="BottomNav"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "技能"
+
+[node name="BtnChest" type="Button" parent="BottomNav"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "开箱"
+
+[node name="BtnStage" type="Button" parent="BottomNav"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "关卡"
+
+[node name="BtnLeaderboard" type="Button" parent="BottomNav"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "排行榜"
