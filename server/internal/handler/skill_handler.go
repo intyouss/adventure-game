@@ -25,11 +25,13 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 	var req struct {
 		Count int `json:"count"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil || req.Count < 1 {
-		req.Count = 1
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
+		return
 	}
-	if req.Count > 10 {
-		req.Count = 10
+	if req.Count < 1 || req.Count > 100 {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidCount, "count must be 1-100")
+		return
 	}
 
 	charID := c.GetInt64("character_id")
@@ -41,6 +43,7 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 			response.Error(c, http.StatusBadRequest, errcode.ErrInsufficientTicket, errcode.Msg(errcode.ErrInsufficientTicket))
 			return
 		}
+		logger.Error(c, "gacha failed", "error", err)
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errcode.Msg(errcode.ErrInternal))
 		return
 	}
@@ -54,7 +57,7 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 // SetSkillSlot handles POST /api/skill/equip
 func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 	var req struct {
-		Slot    int    `json:"slot" binding:"required"`
+		Slot    int    `json:"slot"`
 		SkillID string `json:"skill_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -156,4 +159,18 @@ func (h *SkillHandler) ShopInfo(c *gin.Context) {
 	}
 
 	response.OK(c, info)
+}
+
+// UpgradeAllSkills handles POST /api/skill/upgrade_all
+func (h *SkillHandler) UpgradeAllSkills(c *gin.Context) {
+	charID := c.GetInt64("character_id")
+
+	logger.Info(c, "[UPGRADE_ALL_SKILLS]")
+	skills, err := h.svc.UpgradeAllSkills(c.Request.Context(), charID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"skills": skills})
 }

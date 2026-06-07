@@ -10,16 +10,17 @@ var _selected_equip_index: int = -1
 var _multi_select: Array = []  # indices selected for batch decompose
 
 func _ready():
-	EventBus.inventory_updated.connect(_refresh)
+	EventBus.inventory_changed.connect(_refresh)
 	decompose_btn.pressed.connect(_on_decompose)
 	batch_decompose_btn.pressed.connect(_on_batch_decompose)
 	inventory_list.multi_selected.connect(_on_multi_select)
 	_refresh()
 
 func _refresh():
+	print("[UI] action=refresh_equip_standalone")
 	inventory_list.clear()
-	for i in range(PlayerState.inventory.size()):
-		var item = PlayerState.inventory[i]
+	for i in range(PlayerState.equipment_inventory.size()):
+		var item = PlayerState.equipment_inventory[i]
 		var model = EquipmentModel.new().from_dict(item)
 		var qcolor = model.get_quality_color()
 		inventory_list.add_item("%s [%s] ATK:%d DEF:%d HP:%d" % [
@@ -51,12 +52,13 @@ func _update_slots():
 				btn.modulate = Color.WHITE
 
 func _find_item_by_uid(uid: String) -> Dictionary:
-	for item in PlayerState.inventory:
+	for item in PlayerState.equipment_inventory:
 		if item.get("uid", item.get("id", "")) == uid:
 			return item
 	return {}
 
 func _on_multi_select(index: int, selected: bool):
+	print("[UI] action=multi_select index=", index, " selected=", selected)
 	if selected:
 		if index not in _multi_select:
 			_multi_select.append(index)
@@ -66,9 +68,9 @@ func _on_multi_select(index: int, selected: bool):
 	_refresh()
 
 func _on_inventory_selected(index: int):
-	if index >= 0 and index < PlayerState.inventory.size():
+	if index >= 0 and index < PlayerState.equipment_inventory.size():
 		_selected_equip_index = index
-		var item = PlayerState.inventory[index]
+		var item = PlayerState.equipment_inventory[index]
 		_show_detail_popup(item)
 
 func _show_detail_popup(item: Dictionary):
@@ -102,9 +104,9 @@ func _show_detail_popup(item: Dictionary):
 			current_label.text = "当前: [空]"
 
 func _on_equip():
-	if _selected_equip_index < 0 or _selected_equip_index >= PlayerState.inventory.size():
+	if _selected_equip_index < 0 or _selected_equip_index >= PlayerState.equipment_inventory.size():
 		return
-	var item = PlayerState.inventory[_selected_equip_index]
+	var item = PlayerState.equipment_inventory[_selected_equip_index]
 	var item_uid = item.get("uid", item.get("id", ""))
 	var slot = item.get("slot", "weapon")
 	await NetworkManager.request("POST", "/api/equipment/equip", {"item_uid": item_uid, "slot": slot})
@@ -120,19 +122,21 @@ func _on_unequip(slot_name: String):
 	_refresh()
 
 func _on_decompose():
-	if _selected_equip_index < 0 or _selected_equip_index >= PlayerState.inventory.size():
+	print("[UI] action=decompose index=", _selected_equip_index)
+	if _selected_equip_index < 0 or _selected_equip_index >= PlayerState.equipment_inventory.size():
 		return
-	var item = PlayerState.inventory[_selected_equip_index]
+	var item = PlayerState.equipment_inventory[_selected_equip_index]
 	var item_uid = item.get("uid", item.get("id", ""))
 	_confirm_decompose([item_uid])
 
 func _on_batch_decompose():
+	print("[UI] action=batch_decompose count=", _multi_select.size())
 	if _multi_select.is_empty():
 		return
 	var item_uids: Array = []
 	for idx in _multi_select:
-		if idx >= 0 and idx < PlayerState.inventory.size():
-			var item = PlayerState.inventory[idx]
+		if idx >= 0 and idx < PlayerState.equipment_inventory.size():
+			var item = PlayerState.equipment_inventory[idx]
 			var uid = item.get("uid", item.get("id", ""))
 			if uid != "":
 				item_uids.append(uid)
@@ -144,6 +148,7 @@ func _confirm_decompose(item_uids: Array):
 	var confirm = ConfirmationDialog.new()
 	confirm.dialog_text = "确定要分解 %d 件装备吗？" % item_uids.size()
 	confirm.confirmed.connect(func():
+	print("[UI] action=confirm_decompose count=", item_uids.size())
 		var res = await NetworkManager.request("POST", "/api/equipment/decompose", {"item_uids": item_uids})
 		if res.code == 0:
 			EventBus.gold_changed.emit(res.data.get("gold_gained", 0))

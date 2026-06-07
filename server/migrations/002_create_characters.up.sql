@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS characters (
     skill_tickets BIGINT NOT NULL DEFAULT 0,
     equipments    JSONB NOT NULL DEFAULT '[]'::jsonb,
     equipped      JSONB NOT NULL DEFAULT '{}'::jsonb,
-    skill_slots   JSONB NOT NULL DEFAULT '{"1":"","2":"","3":"","4":""}'::jsonb,
+    skill_slots   JSONB NOT NULL DEFAULT '["","","",""]'::jsonb,
     created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -29,7 +29,15 @@ func (h *StageHandler) GetStageConfig(c *gin.Context) {
 	logger.Info(c, "[GET_STAGE_CONFIG]", "stage_id", stageID)
 	cfg, err := h.svc.GetStageConfig(c.Request.Context(), charID, stageID)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, errcode.ErrStageNotUnlocked, err.Error())
+		errMsg := err.Error()
+		switch errMsg {
+		case "stage not found":
+			response.Error(c, http.StatusNotFound, errcode.ErrStageNotFound, errcode.Msg(errcode.ErrStageNotFound))
+		case "stage not unlocked":
+			response.Error(c, http.StatusBadRequest, errcode.ErrStageNotUnlocked, errMsg)
+		default:
+			response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errMsg)
+		}
 		return
 	}
 	response.OK(c, cfg)

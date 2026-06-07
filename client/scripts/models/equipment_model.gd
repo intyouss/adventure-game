@@ -1,6 +1,7 @@
 class_name EquipmentModel
 extends RefCounted
 
+var name: String
 var id: String
 var slot: String
 var quality: int
@@ -31,6 +32,7 @@ const SLOT_NAMES = {
 }
 
 func from_dict(d: Dictionary):
+	name = d.get("name", "")
 	id = d.get("id", "")
 	slot = d.get("slot", "")
 	quality = d.get("quality", 1)

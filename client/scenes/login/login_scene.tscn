@@ -23,11 +23,15 @@ offset_bottom = 200.0
 
 [node name="TabPhone" type="Button" parent="VBox"]
 layout_mode = 2
-text = "手机号"
+text = "手机验证码"
 
 [node name="TabEmail" type="Button" parent="VBox"]
 layout_mode = 2
-text = "邮箱"
+text = "邮箱验证码"
+
+[node name="TabAccount" type="Button" parent="VBox"]
+layout_mode = 2
+text = "账号密码"
 
 [node name="PhoneInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
@@ -36,6 +40,11 @@ placeholder_text = "手机号"
 [node name="EmailInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
 placeholder_text = "邮箱"
+visible = false
+
+[node name="AccountInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "手机号 / 邮箱"
 visible = false
 
 [node name="NicknameInput" type="LineEdit" parent="VBox"]

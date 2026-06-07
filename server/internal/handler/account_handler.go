@@ -19,7 +19,6 @@ func NewAccountHandler(svc *service.AccountService) *AccountHandler {
 	return &AccountHandler{svc: svc}
 }
 
-// SendCode handles POST /api/auth/send_code
 func (h *AccountHandler) SendCode(c *gin.Context) {
 	var req struct {
 		Phone string `json:"phone"`
@@ -55,11 +54,20 @@ func (h *AccountHandler) SendCode(c *gin.Context) {
 	response.OK(c, nil)
 }
 
-// Register handles POST /api/auth/register
 func (h *AccountHandler) Register(c *gin.Context) {
 	var req service.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
+		return
+	}
+
+	if len(req.Password) < 6 || len(req.Password) > 32 {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidPassword, "password must be 6-32 characters")
+		return
+	}
+
+	if req.Nickname != "" && (len(req.Nickname) < 2 || len(req.Nickname) > 12) {
+		response.Error(c, http.StatusBadRequest, errcode.ErrNicknameInvalid, errcode.Msg(errcode.ErrNicknameInvalid))
 		return
 	}
 
@@ -83,7 +91,6 @@ func (h *AccountHandler) Register(c *gin.Context) {
 	response.OK(c, tokens)
 }
 
-// Login handles POST /api/auth/login
 func (h *AccountHandler) Login(c *gin.Context) {
 	var req service.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -100,6 +107,12 @@ func (h *AccountHandler) Login(c *gin.Context) {
 		case "wrong password":
 			logger.Warn(c, "[LOGIN] wrong password", "account", req.Account)
 			response.Error(c, http.StatusUnauthorized, errcode.ErrWrongPassword, errcode.Msg(errcode.ErrWrongPassword))
+		case "invalid or expired code", "wrong code", "too many attempts":
+			logger.Warn(c, "[LOGIN] invalid code", "account", req.Account)
+			response.Error(c, http.StatusBadRequest, errcode.ErrInvalidCode, errcode.Msg(errcode.ErrInvalidCode))
+		case "password or code required":
+			logger.Warn(c, "[LOGIN] missing credentials", "account", req.Account)
+			response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, "password or code required")
 		default:
 			logger.Error(c, "[LOGIN] failed", "error", err)
 			response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errcode.Msg(errcode.ErrInternal))
@@ -111,7 +124,6 @@ func (h *AccountHandler) Login(c *gin.Context) {
 	response.OK(c, tokens)
 }
 
-// RefreshToken handles POST /api/auth/refresh
 func (h *AccountHandler) RefreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`

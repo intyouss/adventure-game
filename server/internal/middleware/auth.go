@@ -23,7 +23,11 @@ func Auth(jwtCfg config.JWTConfig) gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		if skipPaths[c.Request.URL.Path] {
+		path := strings.TrimRight(c.Request.URL.Path, "/")
+		if path == "" {
+			path = "/"
+		}
+		if skipPaths[path] {
 			c.Next()
 			return
 		}

@@ -67,20 +67,18 @@ func load_character():
 func load_equipment():
 	var res = await NetworkManager.request("GET", "/api/equipment/inventory")
 	if res.code == 0:
-		equipment_inventory = res.data.get("items", [])
-		equipped = res.data.equipped
+		equipment_inventory = res.data.get("items", []) if res.data.get("items") != null else []
+		equipped = res.data.get("equipped", {}) if res.data.get("equipped") != null else {}
 		inventory_changed.emit()
-		EventBus.inventory_changed.emit()
 
 func load_skills():
 	var res = await NetworkManager.request("GET", "/api/skill/list")
 	if res.code == 0:
-		skill_inventory = res.data.get("skills", [])
+		skill_inventory = res.data.get("skills", []) if res.data.get("skills") != null else []
 	var res2 = await NetworkManager.request("GET", "/api/skill/slots")
 	if res2.code == 0:
-		skill_equipped = res2.data.get("equipped", [])
+		skill_equipped = res2.data.get("equipped", []) if res2.data.get("equipped") != null else []
 	skill_updated.emit()
-	EventBus.skill_updated.emit()
 
 func load_chest_info():
 	var res = await NetworkManager.request("GET", "/api/chest/info")
@@ -101,3 +99,6 @@ func load_all():
 	await load_skills()
 	await load_chest_info()
 	await load_progress()
+	# Emit EventBus signals once after all data is loaded
+	EventBus.inventory_changed.emit()
+	EventBus.skill_updated.emit()

@@ -27,11 +27,13 @@ func _setup_chapter_tabs():
 			btn.button_pressed = true
 
 func _switch_chapter(chapter: int):
+	print("[UI] action=leaderboard_chapter_standalone chapter=", chapter)
 	_current_chapter = chapter
 	_current_page = 1
 	_refresh()
 
 func _load_next_page():
+	print("[UI] action=leaderboard_load_more_standalone page=", _current_page)
 	_current_page += 1
 	_load_rankings(true)
 

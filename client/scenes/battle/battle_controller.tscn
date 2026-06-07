@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://battle_controller"]
+
+[ext_resource type="Script" path="res://scenes/battle/battle_controller.gd" id="1_battle_ctrl"]
+
+[node name="root" type="Node"]
+script = ExtResource("1_battle_ctrl")
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 400.0
+offset_bottom = 40.0
+
+[node name="WaveLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 50.0
+offset_right = 400.0
+offset_bottom = 76.0
+text = "准备战斗"
+
+[node name="DamageLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 80.0
+offset_right = 400.0
+offset_bottom = 106.0
+text = "伤害: 0"
+
+[node name="TimeLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 110.0
+offset_right = 400.0
+offset_bottom = 136.0
+text = "0.0s"

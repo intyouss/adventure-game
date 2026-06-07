@@ -13,14 +13,15 @@ func _ready():
 	_refresh()
 
 func _refresh():
+	print("[UI] action=refresh_equip_area")
 	for slot_name in SLOTS:
 		var equip_uid = PlayerState.equipped.get(slot_name, "")
 		var btn = slot_grid.get_node_or_null(slot_name)
 		if not btn or not btn is Button:
 			continue
-		# Disconnect previous signals to avoid duplicates
-		if btn.pressed.is_connected(_on_unequip):
-			btn.pressed.disconnect(_on_unequip)
+		# Disconnect all previous bound connections to avoid duplicates
+		for conn in btn.pressed.get_connections():
+			btn.pressed.disconnect(conn.callable)
 		btn.pressed.connect(_on_unequip.bind(slot_name))
 
 		if equip_uid != "" and equip_uid != null:
@@ -37,6 +38,7 @@ func _refresh():
 			btn.modulate = Color.WHITE
 
 func _on_unequip(slot_name: String):
+	print("[UI] unequip slot=", slot_name)
 	var equip_uid = PlayerState.equipped.get(slot_name, "")
 	if equip_uid == "" or equip_uid == null:
 		return

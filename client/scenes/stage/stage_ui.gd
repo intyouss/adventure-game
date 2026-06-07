@@ -28,6 +28,7 @@ func _setup_chapter_tabs():
 
 func _switch_chapter(chapter: int):
 	_current_chapter = chapter
+	print("[UI] action=stage_chapter chapter=", chapter)
 	_load_stage_list()
 
 func _refresh():
@@ -89,6 +90,7 @@ func _is_cleared(chapter: int, level: int) -> bool:
 
 func _on_stage_selected(index: int):
 	var configs = _stage_configs.get(_current_chapter, [])
+	print("[UI] action=stage_selected index=", index)
 	if index >= 0 and index < configs.size():
 		_selected_stage_idx = index
 
@@ -96,6 +98,7 @@ func _challenge():
 	if _selected_stage_idx < 0:
 		# Default to current progress
 		var stage_id = "%d-%d" % [PlayerState.stage_chapter, PlayerState.stage_level]
+		print("[UI] action=challenge stage=", stage_id)
 		EventBus.battle_started.emit(stage_id)
 		# Use BattleController directly instead of scene change
 		var battle_controller = load("res://scenes/battle/battle_controller.gd").new()
@@ -111,6 +114,7 @@ func _challenge():
 		return
 
 	var stage_id = cfg.get("stage_id", "%d-%d" % [_current_chapter, cfg.get("level", 1)])
+	print("[UI] action=challenge stage=", stage_id)
 	EventBus.battle_started.emit(stage_id)
 
 	# Instantiate BattleController at runtime (no hardcoded tscn dependency)

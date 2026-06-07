@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math"
 	"math/big"
 
@@ -54,10 +55,16 @@ func (s *ChestService) GetChestInfo(ctx context.Context, charID int64) (map[stri
 	if char.ZoneLevel < 28 {
 		cost = s.zoneUpgradeCost(char.ZoneLevel)
 	}
+	maxQ := s.zoneMaxQuality(char.ZoneLevel)
+	qualities := make([]int, 0, maxQ)
+	for q := 1; q <= maxQ; q++ {
+		qualities = append(qualities, q)
+	}
 	return map[string]interface{}{
-		"chest_count":  char.ChestCount,
-		"zone_level":   char.ZoneLevel,
-		"upgrade_cost": cost,
+		"chest_count":      char.ChestCount,
+		"zone_level":       char.ZoneLevel,
+		"upgrade_cost":     cost,
+		"active_qualities": qualities,
 	}, nil
 }
 
@@ -67,7 +74,13 @@ func (s *ChestService) OpenChest(ctx context.Context, charID int64, count int) (
 		return nil, 0, fmt.Errorf("invalid count")
 	}
 
-	char, err := s.charRepo.FindByID(ctx, charID)
+	tx, err := s.equipRepo.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return nil, 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	char, err := s.charRepo.FindByIDForUpdate(ctx, tx, charID)
 	if err != nil || char == nil {
 		return nil, 0, fmt.Errorf("character not found")
 	}
@@ -77,7 +90,7 @@ func (s *ChestService) OpenChest(ctx context.Context, charID int64, count int) (
 
 	maxQ := s.zoneMaxQuality(char.ZoneLevel)
 
-	var results []model.Equipment
+	results := make([]model.Equipment, 0, count)
 	for i := 0; i < count; i++ {
 		quality := s.rollChestQuality(maxQ)
 		idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(model.EquipmentSlots))))
@@ -90,7 +103,7 @@ func (s *ChestService) OpenChest(ctx context.Context, charID int64, count int) (
 
 		// Add to inventory
 		eqJSON, _ := json.Marshal(equip)
-		if err := s.equipRepo.AddEquipment(ctx, charID, string(eqJSON)); err != nil {
+		if err := s.equipRepo.AddEquipmentInTx(ctx, tx, charID, string(eqJSON)); err != nil {
 			return nil, 0, fmt.Errorf("add equipment: %w", err)
 		}
 		results = append(results, equip)
@@ -98,8 +111,12 @@ func (s *ChestService) OpenChest(ctx context.Context, charID int64, count int) (
 
 	// Decrement chest count
 	char.ChestCount -= count
-	if err := s.charRepo.UpdateChestFields(ctx, charID, char.ChestCount, char.ZoneLevel, char.Gold); err != nil {
+	if err := s.charRepo.UpdateChestFieldsInTx(ctx, tx, charID, char.ChestCount, char.ZoneLevel, char.Gold); err != nil {
 		return nil, 0, fmt.Errorf("update chest count: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, 0, fmt.Errorf("commit: %w", err)
 	}
 
 	return results, char.ChestCount, nil
@@ -107,7 +124,13 @@ func (s *ChestService) OpenChest(ctx context.Context, charID int64, count int) (
 
 // UpgradeZone levels up the chest zone.
 func (s *ChestService) UpgradeZone(ctx context.Context, charID int64) (int, int64, error) {
-	char, err := s.charRepo.FindByID(ctx, charID)
+	tx, err := s.equipRepo.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return 0, 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	char, err := s.charRepo.FindByIDForUpdate(ctx, tx, charID)
 	if err != nil || char == nil {
 		return 0, 0, fmt.Errorf("character not found")
 	}
@@ -123,12 +146,18 @@ func (s *ChestService) UpgradeZone(ctx context.Context, charID int64) (int, int6
 	char.Gold -= cost
 	char.ZoneLevel++
 
-	if err := s.charRepo.UpdateChestFields(ctx, charID, char.ChestCount, char.ZoneLevel, char.Gold); err != nil {
+	if err := s.charRepo.UpdateChestFieldsInTx(ctx, tx, charID, char.ChestCount, char.ZoneLevel, char.Gold); err != nil {
 		return 0, 0, fmt.Errorf("update zone: %w", err)
 	}
 
+	if err := tx.Commit(); err != nil {
+		return 0, 0, fmt.Errorf("commit: %w", err)
+	}
+
 	// Write currency log
-	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "gold", -cost, "chest_zone_upgrade")
+	if err := s.charRepo.InsertCurrencyLog(ctx, charID, "gold", -cost, "chest_zone_upgrade"); err != nil {
+		slog.Error("insert currency log failed", "character_id", charID, "currency", "gold", "amount", -cost, "error", err)
+	}
 
 	return char.ZoneLevel, char.Gold, nil
 }

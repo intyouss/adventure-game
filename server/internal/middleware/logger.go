@@ -28,7 +28,7 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 //
 //	[REQ] id=uuid method=POST path=/api/xxx ip=1.2.3.4 query="k=v" body={...}
 //	[RES] id=uuid method=POST path=/api/xxx status=200 latency=45ms code=0 msg=ok
-//	[ERR] id=uuid method=POST path=/api/xxx status=500 error="details"
+//	[ERR] id=uuid method=POST path=/api/xxx status=2000 error="details"
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		reqID := uuid.New().String()
@@ -43,8 +43,8 @@ func Logger() gin.HandlerFunc {
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 			if len(bodyBytes) > 0 {
 				reqBody = string(bodyBytes)
-				if len(reqBody) > 500 {
-					reqBody = reqBody[:500] + "..."
+				if len(reqBody) > 2000 {
+					reqBody = reqBody[:2000] + "..."
 				}
 			}
 		}
@@ -73,8 +73,8 @@ func Logger() gin.HandlerFunc {
 
 		// Truncate response body for logging
 		respBody := rw.body.String()
-		if len(respBody) > 500 {
-			respBody = respBody[:500] + "..."
+		if len(respBody) > 2000 {
+			respBody = respBody[:2000] + "..."
 		}
 
 		if status >= 400 {
@@ -93,6 +93,7 @@ func Logger() gin.HandlerFunc {
 				"path", c.Request.URL.Path,
 				"status", status,
 				"latency_ms", latency,
+				"body", respBody,
 			)
 		}
 	}

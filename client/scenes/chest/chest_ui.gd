@@ -23,6 +23,7 @@ func _ready():
 	_refresh()
 
 func _on_quantity_changed(index: int):
+	print("[UI] action=quantity_changed idx=", index, " count=", _selected_count)
 	match index:
 		0: _selected_count = 1
 		1: _selected_count = 5
@@ -40,6 +41,7 @@ func _refresh():
 		upgrade_cost_label.text = "升级费用: %d 金币" % info.data.get("upgrade_cost", 0)
 
 func _open_chest():
+	print("[UI] action=open_chest_standalone count=", _selected_count)
 	var count = min(_selected_count, PlayerState.chest_count)
 	if count < 1:
 		result_label.text = "没有箱子了!"
@@ -62,6 +64,7 @@ func _open_chest():
 		result_label.text = res.msg
 
 func _upgrade_zone():
+	print("[UI] action=upgrade_zone_standalone")
 	var res = await NetworkManager.request("POST", "/api/chest/upgrade_zone")
 	if res.code == 0:
 		var new_level = res.data.get("new_zone_level", PlayerState.zone_level + 1)

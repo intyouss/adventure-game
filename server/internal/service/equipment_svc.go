@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math/big"
 
 	"github.com/adventure-game/server/internal/model"
@@ -72,8 +73,9 @@ func (s *EquipmentService) GenerateEquipment(slot string, quality int) (model.Eq
 	aspdBase := 0.95 + float64(quality)*0.01
 	aspdRoll, _ := randFloat(aspdBase, aspdBase+0.10)
 
+	name := randomEquipName(slot, quality)
 	return model.Equipment{
-		ID: id, Slot: slot, Quality: quality,
+		ID: id, Name: name, Slot: slot, Quality: quality,
 		ATK: atk, DEF: def, HP: hp,
 		CritRate: critRoll, AtkSpeed: aspdRoll,
 	}, nil
@@ -81,7 +83,13 @@ func (s *EquipmentService) GenerateEquipment(slot string, quality int) (model.Eq
 
 // Decompose removes equipment by item_uids and rewards gold + exp using currency service.
 func (s *EquipmentService) Decompose(ctx context.Context, charID int64, itemUIDs []string) (totalExp int64, totalGold int64, err error) {
-	equipJSON, equippedJSON, currentGold, err := s.repo.GetEquipments(ctx, charID)
+	tx, err := s.repo.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return 0, 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	equipJSON, equippedJSON, currentGold, err := s.repo.GetEquipmentsForUpdate(ctx, tx, charID)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -135,12 +143,17 @@ func (s *EquipmentService) Decompose(ctx context.Context, charID int64, itemUIDs
 	newInvJSON, _ := json.Marshal(newInv)
 	newEqJSON, _ := json.Marshal(equipped)
 
-	if err := s.repo.UpdateEquipments(ctx, charID, string(newInvJSON), string(newEqJSON), newGold); err != nil {
+	if err := s.repo.UpdateEquipmentsInTx(ctx, tx, charID, string(newInvJSON), string(newEqJSON), newGold); err != nil {
 		return 0, 0, fmt.Errorf("save: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, 0, fmt.Errorf("commit: %w", err)
 	}
 
 	// Write currency log for gold
-	_ = s.currencySvc.charRepo.InsertCurrencyLog(ctx, charID, "gold", totalGold, "decompose_equipment")
+	if err := s.currencySvc.charRepo.InsertCurrencyLog(ctx, charID, "gold", totalGold, "decompose_equipment"); err != nil {
+		slog.Error("insert currency log failed", "character_id", charID, "currency", "gold", "amount", totalGold, "error", err)
+	}
 
 	return totalExp, totalGold, nil
 }
@@ -151,22 +164,22 @@ func (s *EquipmentService) GetInventory(ctx context.Context, charID int64) ([]mo
 	if err != nil {
 		return nil, nil, err
 	}
-	var inventory []model.Equipment
-	var equipped map[string]string
+	inventory := []model.Equipment{}
+	equipped := make(map[string]string)
 	json.Unmarshal([]byte(equipJSON), &inventory)
 	json.Unmarshal([]byte(equippedJSON), &equipped)
-	if equipped == nil {
-		equipped = make(map[string]string)
-	}
-	if inventory == nil {
-		inventory = []model.Equipment{}
-	}
 	return inventory, equipped, nil
 }
 
 // Equip equips an item to a slot.
 func (s *EquipmentService) Equip(ctx context.Context, charID int64, equipID string, slot string) error {
-	equipJSON, equippedJSON, gold, err := s.repo.GetEquipments(ctx, charID)
+	tx, err := s.repo.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	equipJSON, equippedJSON, gold, err := s.repo.GetEquipmentsForUpdate(ctx, tx, charID)
 	if err != nil {
 		return fmt.Errorf("get equipments: %w", err)
 	}
@@ -209,12 +222,21 @@ func (s *EquipmentService) Equip(ctx context.Context, charID int64, equipID stri
 	equipped[slot] = equipID
 	newEqJSON, _ := json.Marshal(equipped)
 
-	return s.repo.UpdateEquipments(ctx, charID, equipJSON, string(newEqJSON), gold)
+	if err := s.repo.UpdateEquipmentsInTx(ctx, tx, charID, equipJSON, string(newEqJSON), gold); err != nil {
+		return fmt.Errorf("save: %w", err)
+	}
+	return tx.Commit()
 }
 
 // Unequip removes an item from a slot.
 func (s *EquipmentService) Unequip(ctx context.Context, charID int64, slot string) error {
-	equipJSON, equippedJSON, gold, err := s.repo.GetEquipments(ctx, charID)
+	tx, err := s.repo.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	equipJSON, equippedJSON, gold, err := s.repo.GetEquipmentsForUpdate(ctx, tx, charID)
 	if err != nil {
 		return fmt.Errorf("get equipments: %w", err)
 	}
@@ -230,7 +252,10 @@ func (s *EquipmentService) Unequip(ctx context.Context, charID int64, slot strin
 	delete(equipped, slot)
 	newEqJSON, _ := json.Marshal(equipped)
 
-	return s.repo.UpdateEquipments(ctx, charID, equipJSON, string(newEqJSON), gold)
+	if err := s.repo.UpdateEquipmentsInTx(ctx, tx, charID, equipJSON, string(newEqJSON), gold); err != nil {
+		return fmt.Errorf("save: %w", err)
+	}
+	return tx.Commit()
 }
 
 func generateEquipID() (string, error) {
@@ -250,6 +275,22 @@ func randInt(min, max int) (int, error) {
 		return 0, err
 	}
 	return min + int(n.Int64()), nil
+}
+
+func randomEquipName(slot string, quality int) string {
+	slotNames, ok := model.EquipmentNames[slot]
+	if !ok {
+		return slot
+	}
+	names, ok := slotNames[quality]
+	if !ok || len(names) == 0 {
+		names = slotNames[1]
+	}
+	if len(names) == 0 {
+		return slot
+	}
+	n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(names))))
+	return names[n.Int64()]
 }
 
 func randFloat(min, max float64) (float64, error) {

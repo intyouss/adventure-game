@@ -13,6 +13,9 @@ type EquipmentRepo struct {
 func NewEquipmentRepo(db *sql.DB) *EquipmentRepo {
 	return &EquipmentRepo{db: db}
 }
+// DB returns the underlying *sql.DB so callers can begin transactions.
+func (r *EquipmentRepo) DB() *sql.DB { return r.db }
+
 
 // GetEquipments returns the raw JSONB for a character's equipment columns.
 func (r *EquipmentRepo) GetEquipments(ctx context.Context, charID int64) (equipmentsJSON, equippedJSON string, gold int64, err error) {

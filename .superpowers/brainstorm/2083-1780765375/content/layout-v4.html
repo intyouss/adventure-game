@@ -1,0 +1,117 @@
+<h2>完整页面布局 — 设计方案</h2>
+<p class="subtitle">自上而下：战斗 → 装备 → 开箱 · 右侧排行榜侧滑面板</p>
+
+<div class="mockup" style="max-width:420px;margin:0 auto;">
+  <div class="mockup-header">新主页面布局</div>
+  <div class="mockup-body" style="position:relative;padding:0;">
+    <!-- HUD -->
+    <div style="background:#111;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:11px;border-bottom:1px solid #333;">
+      <span style="color:#ff0;">Lv.5</span>
+      <div style="flex:1;height:6px;background:#333;border-radius:3px;"><div style="width:60%;height:100%;background:#0a0;border-radius:3px;"></div></div>
+      <span style="color:#ccc;">💰1200</span>
+      <span style="color:#ccc;">🎫3</span>
+      <span style="color:#ccc;">CP450</span>
+    </div>
+    
+    <!-- Battle / Stage Area -->
+    <div style="background:#1a1025;border-bottom:1px solid #4a2080;padding:8px;position:relative;">
+      <!-- Stage tabs -->
+      <div style="display:flex;justify-content:center;gap:4px;margin-bottom:6px;font-size:9px;">
+        <span style="background:#4a2080;color:white;padding:2px 6px;border-radius:3px;">第1章</span>
+        <span style="background:#222;color:#666;padding:2px 6px;border-radius:3px;">第2章</span>
+        <span style="background:#222;color:#666;padding:2px 6px;border-radius:3px;">第3章</span>
+      </div>
+      <!-- Stage name centered -->
+      <div style="text-align:center;font-size:16px;font-weight:bold;color:#e0b0ff;margin:4px 0;">1-5</div>
+      <!-- Battle scene -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;padding:8px 16px;min-height:80px;">
+        <div style="text-align:center;">
+          <div style="width:32px;height:48px;background:#4080c0;border-radius:4px;margin:0 auto;"></div>
+          <div style="font-size:8px;color:#80b0e0;margin-top:2px;">战士</div>
+          <div style="width:50px;height:4px;background:#333;border-radius:2px;margin-top:2px;"><div style="width:80%;height:100%;background:#e04040;border-radius:2px;"></div></div>
+        </div>
+        <div style="font-size:20px;color:#666;">⚔️</div>
+        <div style="text-align:center;">
+          <div style="width:28px;height:40px;background:#c04040;border-radius:4px;margin:0 auto;"></div>
+          <div style="font-size:8px;color:#e08080;margin-top:2px;">哥布林</div>
+          <div style="width:50px;height:4px;background:#333;border-radius:2px;margin-top:2px;"><div style="width:40%;height:100%;background:#e04040;border-radius:2px;"></div></div>
+        </div>
+      </div>
+      <!-- Skill slots (5) -->
+      <div style="display:flex;justify-content:center;gap:6px;padding:6px 0;border-top:1px solid #2a1a3a;">
+        <div style="background:#4a2a00;border:2px solid #e08000;border-radius:6px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:18px;">🔥</div>
+        <div style="border:1px dashed #555;border-radius:6px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#555;">+</div>
+        <div style="border:1px dashed #555;border-radius:6px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#555;">+</div>
+        <div style="border:1px dashed #555;border-radius:6px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#555;">+</div>
+        <div style="border:1px dashed #555;border-radius:6px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#555;">+</div>
+      </div>
+    </div>
+
+    <!-- Equipment Area -->
+    <div style="background:#0f1a0f;border-bottom:1px solid #306030;padding:8px;">
+      <div style="font-size:10px;color:#60a060;margin-bottom:6px;">🛡️ 装备</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
+        <div style="background:#1a2a1a;border:1px solid #305030;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#80c080;">武器<br><span style="font-size:7px;color:#ff0;">传说</span></div>
+        <div style="background:#1a2a1a;border:1px solid #305030;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#80c080;">头盔<br><span style="font-size:7px;color:#ddd;">普通</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">铠甲<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">鞋子<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">戒指1<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">戒指2<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">项链<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">护腕<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">腰带<br><span style="font-size:7px;">[空]</span></div>
+        <div style="background:#222;border:1px dashed #444;border-radius:4px;padding:4px;text-align:center;font-size:8px;color:#666;">手套<br><span style="font-size:7px;">[空]</span></div>
+      </div>
+    </div>
+
+    <!-- Chest Area -->
+    <div style="background:#1a1a0f;padding:8px;">
+      <div style="font-size:10px;color:#a0a060;margin-bottom:4px;">📦 开箱</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#ccc;">
+        <span>箱子: 3</span>
+        <span>区域 Lv.2</span>
+        <button class="mock-button" style="font-size:10px;padding:2px 8px;">开箱</button>
+        <button class="mock-button" style="font-size:10px;padding:2px 8px;">升级</button>
+      </div>
+    </div>
+
+    <!-- Leaderboard trigger button (right side) -->
+    <div style="position:absolute;right:0;top:50%;transform:translateY(-50%);">
+      <div style="width:24px;height:48px;background:#6340a0;border-radius:6px 0 0 6px;writing-mode:vertical-lr;font-size:10px;color:white;text-align:center;line-height:24px;cursor:pointer;">🏆</div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros"><h4>设计要点</h4>
+    <ul>
+      <li>战斗区域直接显示对战场景，点击关卡即开战</li>
+      <li>5个技能槽：固定技能(🔥) + 4个装备槽</li>
+      <li>装备区5×2网格展示10件装备</li>
+      <li>开箱区域紧凑一行</li>
+      <li>排行榜右侧滑出面板</li>
+      <li>移除底部TabContainer和BottomNav</li>
+    </ul></div>
+  <div class="cons"><h4>待确认</h4>
+    <ul>
+      <li>技能抽卡/升级界面如何处理？（独立弹窗？）</li>
+      <li>装备背包/分解界面如何处理？</li>
+    </ul></div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>方案确认</h3>
+      <p>布局合理，可以进入实现阶段</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>还有细节需要修改</p>
+    </div>
+  </div>
+</div>

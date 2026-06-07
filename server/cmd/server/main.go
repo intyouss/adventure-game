@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"github.com/adventure-game/server/internal/database"
 	"github.com/adventure-game/server/internal/handler"
 	"github.com/adventure-game/server/internal/middleware"
+	"github.com/adventure-game/server/internal/model"
 	"github.com/adventure-game/server/internal/repository"
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/response"
@@ -59,7 +61,7 @@ func main() {
 
 	currencySvc := service.NewCurrencyService(characterRepo)
 
-	accountSvc := service.NewAccountService(accountRepo, characterRepo, rdb, cfg.JWT)
+	accountSvc := service.NewAccountService(accountRepo, characterRepo, rdb, cfg.JWT, cfg.Verify)
 	accountHandler := handler.NewAccountHandler(accountSvc)
 
 	characterSvc := service.NewCharacterService(characterRepo)
@@ -78,9 +80,8 @@ func main() {
 	stageHandler := handler.NewStageHandler(stageSvc)
 
 	battleSvc := service.NewBattleService(rdb)
-	leaderboardSvc := service.NewLeaderboardService(rdb)
+	leaderboardSvc := service.NewLeaderboardService(rdb, characterRepo)
 	leaderboardHandler := handler.NewLeaderboardHandler(leaderboardSvc)
-	_ = battleSvc
 
 	// --- Router ---
 	r := gin.New()
@@ -91,10 +92,12 @@ func main() {
 	// Health check (DB + Redis)
 	r.GET("/healthz", func(c *gin.Context) {
 		if err := db.PingContext(c.Request.Context()); err != nil {
+			slog.Warn("healthz check failed", "component", "database", "error", err)
 			response.Error(c, http.StatusServiceUnavailable, -1, "database unavailable")
 			return
 		}
 		if err := rdb.Ping(c.Request.Context()).Err(); err != nil {
+			slog.Warn("healthz check failed", "component", "redis", "error", err)
 			response.Error(c, http.StatusServiceUnavailable, -1, "redis unavailable")
 			return
 		}
@@ -137,6 +140,7 @@ func main() {
 		skill.POST("/gacha", skillHandler.Gacha)
 		skill.POST("/equip", skillHandler.SetSkillSlot)
 		skill.POST("/upgrade", skillHandler.UpgradeSkill)
+		skill.POST("/upgrade_all", skillHandler.UpgradeAllSkills)
 		skill.GET("/shop_info", skillHandler.ShopInfo)
 	}
 
@@ -182,9 +186,77 @@ func main() {
 				slog.Info("websocket disconnected", "character_id", charID, "error", err)
 				break
 			}
-			// Echo for now; battle processing handled by Plan A/B services
-			if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
-				break
+
+			var msg struct {
+				Type    string          `json:"type"`
+				Payload json.RawMessage `json:"payload"`
+			}
+			if err := json.Unmarshal(message, &msg); err != nil {
+				slog.Warn("invalid ws message", "character_id", charID, "error", err)
+				continue
+			}
+
+			switch msg.Type {
+			case "request_stage_config":
+				var req struct {
+					StageID string `json:"stage_id"`
+				}
+				if err := json.Unmarshal(msg.Payload, &req); err == nil {
+					cfg := model.GenerateStageConfig(parseStageFromID(req.StageID))
+					resp, _ := json.Marshal(map[string]interface{}{
+						"type":    "stage_config",
+						"payload": cfg,
+					})
+					conn.WriteMessage(websocket.TextMessage, resp)
+				}
+
+			case "battle_summary":
+				var summary model.BattleSummary
+				if err := json.Unmarshal(msg.Payload, &summary); err != nil {
+					slog.Warn("bad battle summary", "error", err)
+					continue
+				}
+
+				// Extract chapter/level from stage_id
+				chapter, level := parseStageFromID(summary.StageID)
+				stageCfg := model.GenerateStageConfig(chapter, level)
+
+				// Plan A: quick validation
+				planAResult := battleSvc.PlanA(summary, stageCfg)
+				planAResp, _ := json.Marshal(map[string]interface{}{
+					"type":    "plan_a_result",
+					"payload": planAResult,
+				})
+				conn.WriteMessage(websocket.TextMessage, planAResp)
+
+				if planAResult.Passed {
+					// Plan B: async server-side simulation
+					if err := battleSvc.PlanB(context.Background(), summary); err != nil {
+						slog.Error("planb enqueue failed", "error", err)
+					} else {
+						planBResult := battleSvc.Simulate(summary, stageCfg)
+						planBResp, _ := json.Marshal(map[string]interface{}{
+							"type":    "plan_b_result",
+							"payload": planBResult,
+						})
+						conn.WriteMessage(websocket.TextMessage, planBResp)
+
+						if planBResult.Passed {
+							// Settle: update stage progress and grant rewards
+							settleResp, _ := json.Marshal(map[string]interface{}{
+								"type": "battle_settled",
+								"payload": map[string]interface{}{
+									"stage_id":  summary.StageID,
+									"chapter":   chapter,
+									"level":     level,
+									"passed":    true,
+									"rewards":   planBResult.Rewards,
+								},
+							})
+							conn.WriteMessage(websocket.TextMessage, settleResp)
+						}
+					}
+				}
 			}
 		}
 	})
@@ -194,4 +266,13 @@ func main() {
 		slog.Error("server failed", "error", err)
 		os.Exit(1)
 	}
+
+}
+
+func parseStageFromID(stageID string) (int, int) {
+	var chapter, level int
+	fmt.Sscanf(stageID, "%d-%d", &chapter, &level)
+	if chapter < 1 { chapter = 1 }
+	if level < 1 { level = 1 }
+	return chapter, level
 }

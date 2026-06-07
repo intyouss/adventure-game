@@ -22,6 +22,7 @@ func _ready():
 	quantity_selector.add_item("10个")
 	quantity_selector.add_item("全部")
 	quantity_selector.item_selected.connect(func(idx):
+		print("[UI] action=chest_quantity idx=", idx, " count=", _selected_count)
 		match idx:
 			0: _selected_count = 1
 			1: _selected_count = 5

@@ -20,33 +20,39 @@ func _ready():
 	_refresh()
 
 func open_panel():
+	print("[UI] leaderboard_open")
 	visible = true
 	_is_open = true
 	anim_player.play("slide_in")
 
 func _collapse():
+	print("[UI] leaderboard_close")
 	_is_open = false
 	anim_player.play("slide_out")
 	await anim_player.animation_finished
 	visible = false
 
 func _setup_chapter_tabs():
+	var group = ButtonGroup.new()
 	for ch in range(1, 11):
 		var btn = Button.new()
 		btn.text = "第%d章" % ch
 		btn.toggle_mode = true
 		var chapter = ch
+		btn.button_group = group
 		btn.pressed.connect(_switch_chapter.bind(chapter))
 		chapter_tabs.add_child(btn)
 		if ch == 1:
 			btn.button_pressed = true
 
 func _switch_chapter(chapter: int):
+	print("[UI] leaderboard_chapter chapter=", chapter)
 	_current_chapter = chapter
 	_current_page = 1
 	_refresh()
 
 func _load_next_page():
+	print("[UI] action=leaderboard_load_more page=", _current_page)
 	_current_page += 1
 	_load_rankings(true)
 
