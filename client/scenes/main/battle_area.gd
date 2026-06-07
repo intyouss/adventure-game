@@ -1,6 +1,5 @@
 extends Control
 
-@onready var chapter_tabs = $ChapterTabs
 @onready var stage_name_label = $StageName
 @onready var battle_scene = $BattleScene
 @onready var skill_slot_0 = $SkillSlots/Slot0
@@ -10,83 +9,73 @@ extends Control
 @onready var skill_slot_4 = $SkillSlots/Slot4
 
 var _slots: Array = []
-var _current_chapter: int = 1
-var _current_stage: String = ""
 
 func _ready():
 	_slots = [skill_slot_0, skill_slot_1, skill_slot_2, skill_slot_3, skill_slot_4]
 	_setup_innate_slot()
-	_setup_chapter_tabs()
 	EventBus.skill_updated.connect(_refresh_skill_slots)
+	EventBus.login_success.connect(_refresh_stage_title)
+	EventBus.auto_login_success.connect(_refresh_stage_title)
 	_refresh_skill_slots()
+	_refresh_stage_title()
+	_setup_battle_display()
 
 func _setup_innate_slot():
 	skill_slot_0.disabled = true
 	skill_slot_0.modulate = Color(1.0, 0.75, 0.0)
 	skill_slot_0.text = "🔥"
 
-func _setup_chapter_tabs():
-	var chapters = 10
-	for ch in range(1, chapters + 1):
-		var btn = Button.new()
-		btn.text = "第%d章" % ch
-		btn.toggle_mode = true
-		var chapter = ch
-		btn.pressed.connect(func(): _switch_chapter(chapter))
-		chapter_tabs.add_child(btn)
-		if ch == 1:
-			btn.button_pressed = true
-	_switch_chapter(1)
+func _chapter_name(chapter: int) -> String:
+	var names = {
+		1: "第一章", 2: "第二章", 3: "第三章", 4: "第四章", 5: "第五章",
+		6: "第六章", 7: "第七章", 8: "第八章", 9: "第九章", 10: "第十章"
+	}
+	return names.get(chapter, "第%d章" % chapter)
 
-func _switch_chapter(chapter: int):
-	_current_chapter = chapter
-	_load_stages()
+func _refresh_stage_title():
+	var chapter = PlayerState.stage_chapter
+	var level = PlayerState.stage_level
+	stage_name_label.text = "%s %d-%d" % [_chapter_name(chapter), chapter, level]
 
-func _load_stages():
-	for child in battle_scene.get_children():
-		child.queue_free()
+func _setup_battle_display():
+	var row = HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	battle_scene.add_child(row)
 
-	var res = await NetworkManager.request("GET", "/api/stage/config?chapter=%d" % _current_chapter)
-	var stages = []
-	if res.code == 0:
-		stages = res.data.get("stages", res.data.get("configs", []))
-	else:
-		for i in range(1, 11):
-			stages.append({"stage_id": "%d-%d" % [_current_chapter, i], "level": i})
+	# Character left
+	var char_label = Label.new()
+	char_label.text = "🧙 角色"
+	char_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	char_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	char_label.add_theme_font_size_override("font_size", 20)
+	row.add_child(char_label)
 
-	for cfg in stages:
-		var stage_id = cfg.get("stage_id", "")
-		var level = cfg.get("level", 1)
-		var unlocked = _is_unlocked(level)
-		var btn = Button.new()
-		btn.text = stage_id
-		btn.disabled = not unlocked
-		var sid = stage_id
-		btn.pressed.connect(func(): _start_battle(sid))
-		battle_scene.add_child(btn)
+	# VS center
+	var vs_label = Label.new()
+	vs_label.text = "⚔ VS ⚔"
+	vs_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vs_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vs_label.add_theme_font_size_override("font_size", 18)
+	row.add_child(vs_label)
 
-func _is_unlocked(level: int) -> bool:
-	if _current_chapter < PlayerState.stage_chapter:
-		return true
-	if _current_chapter == PlayerState.stage_chapter:
-		return level <= PlayerState.stage_level
-	return false
-
-func _start_battle(stage_id: String):
-	_current_stage = stage_id
-	stage_name_label.text = stage_id
-	EventBus.battle_started.emit(stage_id)
-	var bc = load("res://scenes/battle/battle_controller.gd").new()
-	get_tree().root.add_child(bc)
-	bc.start_stage(stage_id)
+	# Monster right
+	var mon_label = Label.new()
+	mon_label.text = "👹 怪物"
+	mon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mon_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mon_label.add_theme_font_size_override("font_size", 20)
+	row.add_child(mon_label)
 
 func _refresh_skill_slots():
+	print("[UI] refresh_skill_slots count=", PlayerState.skill_equipped.size())
 	var equipped = PlayerState.skill_equipped
 	for i in range(1, 5):
 		var slot = _slots[i]
 		if i - 1 < equipped.size() and equipped[i - 1] != null and equipped[i - 1] != "":
-			var name = _find_skill_name(str(equipped[i - 1]))
-			slot.text = name if name != "" else "?"
+			var skill_name = _find_skill_name(str(equipped[i - 1]))
+			slot.text = skill_name if skill_name != "" else "?"
 			slot.modulate = Color.WHITE
 		else:
 			slot.text = "+"

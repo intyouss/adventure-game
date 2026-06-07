@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/adventure-game/server/internal/repository"
 )
@@ -36,7 +37,9 @@ func (s *CurrencyService) AddGold(ctx context.Context, charID int64, amount int6
 	if err := s.charRepo.UpdateStats(ctx, char); err != nil {
 		return err
 	}
-	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "gold", amount, reason)
+	if err := s.charRepo.InsertCurrencyLog(ctx, charID, "gold", amount, reason); err != nil {
+		slog.Error("insert currency log failed", "character_id", charID, "currency", "gold", "amount", amount, "error", err)
+	}
 	return nil
 }
 
@@ -56,7 +59,9 @@ func (s *CurrencyService) DeductGold(ctx context.Context, charID int64, amount i
 	if err := s.charRepo.UpdateStats(ctx, char); err != nil {
 		return err
 	}
-	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "gold", -amount, reason)
+	if err := s.charRepo.InsertCurrencyLog(ctx, charID, "gold", -amount, reason); err != nil {
+		slog.Error("insert currency log failed", "character_id", charID, "currency", "gold", "amount", -amount, "error", err)
+	}
 	return nil
 }
 
@@ -73,6 +78,8 @@ func (s *CurrencyService) AddSkillTickets(ctx context.Context, charID int64, amo
 	if err := s.charRepo.UpdateStats(ctx, char); err != nil {
 		return err
 	}
-	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "skill_ticket", amount, reason)
+	if err := s.charRepo.InsertCurrencyLog(ctx, charID, "skill_ticket", amount, reason); err != nil {
+		slog.Error("insert currency log failed", "character_id", charID, "currency", "skill_ticket", "amount", amount, "error", err)
+	}
 	return nil
 }

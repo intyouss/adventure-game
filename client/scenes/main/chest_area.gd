@@ -22,6 +22,7 @@ func _ready():
 	quantity_selector.add_item("10个")
 	quantity_selector.add_item("全部")
 	quantity_selector.item_selected.connect(func(idx):
+		print("[UI] action=chest_quantity idx=", idx, " count=", _selected_count)
 		match idx:
 			0: _selected_count = 1
 			1: _selected_count = 5
@@ -45,7 +46,11 @@ func _open_chest():
 		return
 	var res = await NetworkManager.request("POST", "/api/chest/open", {"count": count})
 	if res.code == 0:
-		var results = res.data.get("results", [])
+		var results = []
+		if res.data is Array:
+			results = res.data
+		else:
+			results = res.data.get("results", [])
 		if results.size() > 0:
 			_show_compare_popup(results[0])
 		await PlayerState.load_all()

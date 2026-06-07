@@ -1,0 +1,52 @@
+<h2>页面垂直布局顺序</h2>
+<p class="subtitle">你需要确认各区域的上下排列顺序</p>
+
+<div class="mockup">
+  <div class="mockup-header">方案 A — 从上到下：战斗 → 装备 → 开箱</div>
+  <div class="mockup-body">
+    <div class="mock-nav" style="font-size:14px;padding:10px;">HUD: Lv.5  EXP ████░░  💰 1200  🎫 3  CP 450</div>
+    <div class="placeholder" style="margin:4px;background:#2a1a3a;color:#e0c0ff;border:1px solid #6340a0;border-radius:4px;text-align:left;padding:12px;">
+      <strong>⚔️ 战斗/关卡区域</strong><br>
+      <span style="font-size:12px;color:#b0a0cc;">关卡列表 · 挑战按钮 · 进度信息</span>
+      <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+        <span style="background:#444;border:1px solid #666;border-radius:4px;padding:4px 12px;font-size:11px;">槽1 [空]</span>
+        <span style="background:#444;border:1px solid #666;border-radius:4px;padding:4px 12px;font-size:11px;">槽2 [空]</span>
+        <span style="background:#444;border:1px solid #666;border-radius:4px;padding:4px 12px;font-size:11px;">槽3 [空]</span>
+        <span style="background:#444;border:1px solid #666;border-radius:4px;padding:4px 12px;font-size:11px;">槽4 [空]</span>
+        <span style="background:#555;border:1px solid #888;border-radius:4px;padding:4px 12px;font-size:11px;">🔥 固定技能</span>
+      </div>
+    </div>
+    <div class="placeholder" style="margin:4px;background:#1a2a1a;color:#c0e0c0;border:1px solid #406040;border-radius:4px;text-align:left;padding:12px;">
+      <strong>🛡️ 装备区域</strong><br>
+      <span style="font-size:12px;color:#a0c0a0;">10格装备槽：武器·头盔·铠甲·鞋子·戒指×2·项链·护腕·腰带·手套</span>
+    </div>
+    <div class="placeholder" style="margin:4px;background:#2a2a1a;color:#e0e0c0;border:1px solid #808040;border-radius:4px;text-align:left;padding:12px;">
+      <strong>📦 开箱区域</strong><br>
+      <span style="font-size:12px;color:#c0c0a0;">箱子数量 · 区域等级 · 开箱按钮 · 升级按钮</span>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>战斗 → 装备 → 开箱（推荐）</h3>
+      <p>关卡战斗是核心玩法置顶，装备在中部过渡，开箱放底部</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>装备 → 战斗 → 开箱</h3>
+      <p>装备区域置顶方便快速切换，战斗居中</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>战斗 → 开箱 → 装备</h3>
+      <p>开箱作为装备的来源放在装备上方</p>
+    </div>
+  </div>
+</div>

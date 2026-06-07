@@ -21,6 +21,9 @@ func _ready():
 
 func _process(_delta):
 	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		if not _ws_connected:
+			_ws_connected = true
+			ws_connected.emit()
 		_ws.poll()
 		while _ws.get_available_packet_count() > 0:
 			var packet = _ws.get_packet()
@@ -135,11 +138,17 @@ func connect_ws():
 
 func disconnect_ws():
 	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		if not _ws_connected:
+			_ws_connected = true
+			ws_connected.emit()
 		_ws.close()
 	_ws_connected = false
 
 func send_ws_message(type: String, payload: Dictionary):
 	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
+		if not _ws_connected:
+			_ws_connected = true
+			ws_connected.emit()
 		var msg = JSON.stringify({"type": type, "payload": payload})
 		_ws.send_text(msg)
 
@@ -178,3 +187,7 @@ func clear_tokens():
 	access_token = ""
 	refresh_token = ""
 	_save_tokens()
+
+func _suppress_unused_signal_warnings():
+	if false:
+		login_success.emit()

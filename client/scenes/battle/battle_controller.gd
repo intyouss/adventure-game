@@ -24,6 +24,7 @@ func start_stage(stage_id: String):
 	NetworkManager.send_ws_message("request_stage_config", {"stage_id": stage_id})
 
 func _on_ws_message(type: String, payload: Dictionary):
+	print("[UI] action=ws_message type=", type)
 	match type:
 		"stage_config":
 			_on_stage_config(payload)
@@ -37,6 +38,7 @@ func _on_ws_message(type: String, payload: Dictionary):
 			_on_error(payload)
 
 func _on_stage_config(config: Dictionary):
+	print("[UI] action=stage_config stage_id=", config.get("stage_id", "?"))
 	simulator = BattleSimulator.new()
 	simulator.start_battle(config.get("config", config), PlayerState.character.get("stats", {}))
 	add_child(simulator)
@@ -50,24 +52,29 @@ func _on_stage_config(config: Dictionary):
 	is_battle_active = true
 
 func _on_battle_finished(summary: BattleSimulator.BattleSummary):
+	print("[UI] action=battle_finished")
 	is_battle_active = false
 	NetworkManager.send_ws_message("battle_summary", summary.to_dict())
 
 func _on_plan_a(result: Dictionary):
+	print("[UI] action=plan_a passed=", result.get("passed", false))
 	if not result.get("passed", false):
 		_show_error("战斗校验失败: " + result.get("reason", "未知错误"))
 
 func _on_plan_b(result: Dictionary):
+	print("[UI] action=plan_b passed=", result.get("passed", false))
 	if not result.get("passed", false):
 		_show_error("服务端验证未通过，战斗结果无效")
 
 func _on_settled(data: Dictionary):
+	print("[UI] action=battle_settled")
 	PlayerState.update_from_server(data)
 	if data.has("rewards"):
 		EventBus.reward_received.emit(data.rewards)
 	battle_completed.emit(data.get("summary", {}))
 
 func _on_error(payload: Dictionary):
+	print("[UI] action=battle_error msg=", payload.get("msg", "?"))
 	_show_error(payload.get("msg", "未知服务端错误"))
 
 func _show_error(msg: String):

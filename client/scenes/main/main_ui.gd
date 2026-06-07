@@ -17,20 +17,27 @@ enum Mode { NORMAL, SKILL_INVENTORY, SHOP }
 @onready var ticket_label = $HUD/TicketLabel
 @onready var cp_label = $HUD/CPLabel
 
-var _mode: Mode = Mode.NORMAL
+var _mode: int = 0
+var _refreshing: bool = false
 
 func _ready():
 	EventBus.login_success.connect(_refresh_hud)
 	EventBus.auto_login_success.connect(_refresh_hud)
+	EventBus.inventory_changed.connect(_refresh_hud)
+	EventBus.skill_updated.connect(_refresh_hud)
 	bottom_row.mode_changed.connect(_on_mode_changed)
 	bottom_row.leaderboard_btn.pressed.connect(_on_leaderboard_toggle)
-	_refresh_hud()
 	_enter_mode(Mode.NORMAL)
+	_refresh_hud_async()
 
-func _on_mode_changed(new_mode: Mode):
+func _refresh_hud_async():
+	await _refresh_hud()
+
+func _on_mode_changed(new_mode: int):
 	_enter_mode(new_mode)
 
-func _enter_mode(mode: Mode):
+func _enter_mode(mode: int):
+	print("[UI] action=enter_mode mode=", mode)
 	_mode = mode
 	match mode:
 		Mode.NORMAL:
@@ -39,6 +46,7 @@ func _enter_mode(mode: Mode):
 			chest_area.visible = true
 			skill_inventory_panel.visible = false
 			shop_panel.visible = false
+			_refresh_hud()
 		Mode.SKILL_INVENTORY:
 			battle_area.visible = true
 			equipment_area.visible = false
@@ -54,13 +62,20 @@ func _enter_mode(mode: Mode):
 	bottom_row.set_active_mode(mode)
 
 func _on_leaderboard_toggle():
+	print("[UI] action=leaderboard_toggle is_open=", leaderboard_panel._is_open)
 	if leaderboard_panel._is_open:
 		leaderboard_panel._collapse()
 	else:
 		leaderboard_panel.open_panel()
 
 func _refresh_hud():
+	if _refreshing:
+		print("[UI] action=refresh_hud SKIPPED (already refreshing)")
+		return
+	_refreshing = true
+	print("[UI] action=refresh_hud")
 	await PlayerState.load_all()
+	_refreshing = false
 	var c = PlayerState.character
 	if c.is_empty(): return
 	level_label.text = "Lv.%d" % c.get("level", 1)
@@ -69,4 +84,3 @@ func _refresh_hud():
 	exp_bar.value = c.get("exp", 0)
 	gold_label.text = "💰 %d" % c.get("gold", 0)
 	ticket_label.text = "🎫 %d" % c.get("skill_tickets", 0)
-	cp_label.text = "CP %.0f" % c.get("cp", 0)

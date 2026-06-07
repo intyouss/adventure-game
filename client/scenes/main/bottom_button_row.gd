@@ -8,7 +8,7 @@ enum Mode { NORMAL, SKILL_INVENTORY, SHOP }
 @onready var shop_btn = $ShopBtn
 @onready var leaderboard_btn = $LeaderboardBtn
 
-var _current_mode: Mode = Mode.NORMAL
+var _current_mode: int = 0
 
 func _ready():
 	skill_btn.pressed.connect(_on_skill_pressed)
@@ -16,6 +16,7 @@ func _ready():
 	leaderboard_btn.pressed.connect(_on_leaderboard_pressed)
 
 func _on_skill_pressed():
+	print("[UI] btn=skill_warehouse old_mode=", _current_mode)
 	if _current_mode == Mode.SKILL_INVENTORY:
 		_current_mode = Mode.NORMAL
 		mode_changed.emit(Mode.NORMAL)
@@ -25,6 +26,7 @@ func _on_skill_pressed():
 	_update_highlight()
 
 func _on_shop_pressed():
+	print("[UI] btn=shop old_mode=", _current_mode)
 	if _current_mode == Mode.SHOP:
 		_current_mode = Mode.NORMAL
 		mode_changed.emit(Mode.NORMAL)
@@ -34,12 +36,12 @@ func _on_shop_pressed():
 	_update_highlight()
 
 func _on_leaderboard_pressed():
+	print("[UI] btn=leaderboard")
 	pass  # Handled by main_ui via direct connection
 
-func set_active_mode(mode: Mode):
+func set_active_mode(mode: int):
 	_current_mode = mode
 	_update_highlight()
 
 func _update_highlight():
 	skill_btn.modulate = Color.YELLOW if _current_mode == Mode.SKILL_INVENTORY else Color.WHITE
-	shop_btn.modulate = Color.YELLOW if _current_mode == Mode.SHOP else Color.WHITE

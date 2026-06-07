@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="冒险大作战"
-config/features=PackedStringArray("4.6")
 run/main_scene="res://scenes/login/login_scene.tscn"
+config/features=PackedStringArray("4.6")
 
 [autoload]
 

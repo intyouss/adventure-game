@@ -7,6 +7,7 @@ import (
 
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/errcode"
+	"github.com/adventure-game/server/pkg/logger"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -24,21 +25,25 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 	var req struct {
 		Count int `json:"count"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil || req.Count < 1 {
-		req.Count = 1
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, errcode.Msg(errcode.ErrInvalidBody))
+		return
 	}
-	if req.Count > 10 {
-		req.Count = 10
+	if req.Count < 1 || req.Count > 100 {
+		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidCount, "count must be 1-100")
+		return
 	}
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GACHA]", "count", req.Count)
 	results, remaining, err := h.svc.GachaPull(c.Request.Context(), charID, req.Count)
 	if err != nil {
 		if err.Error() == "insufficient skill tickets" {
 			response.Error(c, http.StatusBadRequest, errcode.ErrInsufficientTicket, errcode.Msg(errcode.ErrInsufficientTicket))
 			return
 		}
+		logger.Error(c, "gacha failed", "error", err)
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errcode.Msg(errcode.ErrInternal))
 		return
 	}
@@ -52,7 +57,7 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 // SetSkillSlot handles POST /api/skill/equip
 func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 	var req struct {
-		Slot    int    `json:"slot" binding:"required"`
+		Slot    int    `json:"slot"`
 		SkillID string `json:"skill_id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,6 +67,7 @@ func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[SET_SKILL_SLOT]", "slot", req.Slot, "skill_id", req.SkillID)
 	if err := h.svc.SetSkillSlot(c.Request.Context(), charID, req.Slot, req.SkillID); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrSkillSlotOccupied, err.Error())
 		return
@@ -74,6 +80,7 @@ func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 func (h *SkillHandler) ListSkills(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[LIST_SKILLS]")
 	skills, err := h.svc.ListSkills(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -88,6 +95,7 @@ func (h *SkillHandler) ListSkills(c *gin.Context) {
 func (h *SkillHandler) GetSkillSlots(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GET_SKILL_SLOTS]")
 	slots, err := h.svc.GetEquippedSkills(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -119,6 +127,7 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[UPGRADE_SKILL]", "skill_id", req.SkillID)
 	skill, err := h.svc.UpgradeSkill(c.Request.Context(), charID, req.SkillID)
 	if err != nil {
 		errMsg := err.Error()
@@ -142,6 +151,7 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 func (h *SkillHandler) ShopInfo(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[SKILL_SHOP_INFO]")
 	info, err := h.svc.ShopInfo(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -149,4 +159,18 @@ func (h *SkillHandler) ShopInfo(c *gin.Context) {
 	}
 
 	response.OK(c, info)
+}
+
+// UpgradeAllSkills handles POST /api/skill/upgrade_all
+func (h *SkillHandler) UpgradeAllSkills(c *gin.Context) {
+	charID := c.GetInt64("character_id")
+
+	logger.Info(c, "[UPGRADE_ALL_SKILLS]")
+	skills, err := h.svc.UpgradeAllSkills(c.Request.Context(), charID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
+		return
+	}
+
+	response.OK(c, gin.H{"skills": skills})
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/errcode"
+	"github.com/adventure-game/server/pkg/logger"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -25,9 +26,18 @@ func (h *StageHandler) GetStageConfig(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GET_STAGE_CONFIG]", "stage_id", stageID)
 	cfg, err := h.svc.GetStageConfig(c.Request.Context(), charID, stageID)
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, errcode.ErrStageNotUnlocked, err.Error())
+		errMsg := err.Error()
+		switch errMsg {
+		case "stage not found":
+			response.Error(c, http.StatusNotFound, errcode.ErrStageNotFound, errcode.Msg(errcode.ErrStageNotFound))
+		case "stage not unlocked":
+			response.Error(c, http.StatusBadRequest, errcode.ErrStageNotUnlocked, errMsg)
+		default:
+			response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errMsg)
+		}
 		return
 	}
 	response.OK(c, cfg)
@@ -37,6 +47,7 @@ func (h *StageHandler) GetStageConfig(c *gin.Context) {
 func (h *StageHandler) GetProgress(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GET_PROGRESS]")
 	progress, err := h.svc.GetProgress(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -58,6 +69,7 @@ func (h *StageHandler) ClaimRewards(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[CLAIM_REWARDS]", "stage_id", req.StageID)
 	rewards, err := h.svc.ClaimRewards(c.Request.Context(), charID, req.StageID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -74,6 +86,7 @@ func (h *StageHandler) GetChapterStages(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, errcode.ErrInvalidBody, "invalid chapter")
 		return
 	}
+	logger.Info(c, "[GET_CHAPTER_STAGES]", "chapter", chapter)
 	stages, err := h.svc.GetChapterStages(c.Request.Context(), chapter)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())

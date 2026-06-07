@@ -26,7 +26,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.3),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [1152.0, 852.0]
+"values": [0.0, -300.0]
 }
 
 [sub_resource type="Animation" id="Animation_lib_slide_out"]
@@ -42,7 +42,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.3),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [852.0, 1152.0]
+"values": [-300.0, 0.0]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_leaderboard"]
@@ -50,8 +50,6 @@ _data = {
 "slide_in": SubResource("Animation_lib_slide_in"),
 "slide_out": SubResource("Animation_lib_slide_out")
 }
-
-
 [node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -110,32 +108,26 @@ offset_bottom = 280.0
 offset_right = 1152.0
 script = ExtResource("3_battle_area")
 
-[node name="ChapterTabs" type="HBoxContainer" parent="BattleArea"]
-layout_mode = 1
-offset_top = 4.0
-offset_right = 1152.0
-offset_bottom = 24.0
-alignment = 1
-
 [node name="StageName" type="Label" parent="BattleArea"]
 layout_mode = 1
-offset_top = 28.0
+offset_top = 0.0
 offset_right = 1152.0
-offset_bottom = 52.0
+offset_bottom = 28.0
 horizontal_alignment = 1
 text = "1-1"
 
 [node name="BattleScene" type="Control" parent="BattleArea"]
 layout_mode = 1
-offset_top = 56.0
+offset_top = 32.0
+anchor_right = 1.0
 offset_right = 1152.0
-offset_bottom = 164.0
+offset_bottom = 148.0
 
 [node name="SkillSlots" type="HBoxContainer" parent="BattleArea"]
 layout_mode = 1
-offset_top = 168.0
+offset_top = 152.0
 offset_right = 1152.0
-offset_bottom = 216.0
+offset_bottom = 200.0
 alignment = 1
 theme_override_constants/separation = 6
 
@@ -345,38 +337,14 @@ offset_right = 292.0
 offset_bottom = 210.0
 text = "替换新装备"
 
-[node name="BottomButtonRow" type="Control" parent="."]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -44.0
-script = ExtResource("2_bottom_button_row")
-
-[node name="SkillBtn" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "📋 技能仓库"
-
-[node name="ShopBtn" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "🏪 商店"
-
-[node name="LeaderboardBtn" type="Button" parent="BottomButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "🏆"
-
 [node name="SkillInventoryPanel" type="Control" parent="."]
 visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
-anchor_bottom = 1.0
 offset_top = 60.0
-offset_bottom = -44.0
+offset_bottom = 470.0
+offset_right = 1152.0
 script = ExtResource("6_skill_inventory_panel")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="SkillInventoryPanel"]
@@ -392,6 +360,14 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 6
 
+[node name="UpgradeAllBtn" type="Button" parent="SkillInventoryPanel"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 4.0
+offset_right = 110.0
+offset_bottom = 28.0
+text = "统一升级"
+
 [node name="CloseBtn" type="Button" parent="SkillInventoryPanel"]
 layout_mode = 0
 offset_left = 8.0
@@ -403,11 +379,11 @@ text = "✕"
 [node name="ShopPanel" type="Control" parent="."]
 visible = false
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = -1
 anchor_right = 1.0
-anchor_bottom = 1.0
 offset_top = 60.0
-offset_bottom = -44.0
+offset_bottom = 470.0
+offset_right = 1152.0
 script = ExtResource("7_shop_panel")
 
 [node name="Grid" type="GridContainer" parent="ShopPanel"]
@@ -426,8 +402,8 @@ offset_top = 4.0
 offset_right = 40.0
 offset_bottom = 28.0
 text = "✕"
-
 [node name="LeaderboardPanel" type="Control" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -443,11 +419,14 @@ libraries = {
 [node name="Panel" type="Panel" parent="LeaderboardPanel"]
 layout_mode = 1
 anchors_preset = -1
+anchor_left = 1.0
 anchor_top = 0.0
-anchor_bottom = 1.0
 anchor_right = 1.0
-offset_left = 1152.0
-offset_right = 852.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
 
 [node name="CollapseBtn" type="Button" parent="LeaderboardPanel/Panel"]
 layout_mode = 0
@@ -482,3 +461,36 @@ offset_right = 292.0
 offset_top = -36.0
 text = "加载更多"
 visible = false
+
+[node name="BottomButtonRow" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0
+anchor_right = 1.0
+offset_top = 470.0
+offset_bottom = 514.0
+script = ExtResource("2_bottom_button_row")
+
+[node name="SkillBtn" type="Button" parent="BottomButtonRow"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = 380.0
+offset_bottom = 40.0
+text = "📋 技能仓库"
+
+[node name="ShopBtn" type="Button" parent="BottomButtonRow"]
+layout_mode = 0
+offset_left = 390.0
+offset_top = 4.0
+offset_right = 762.0
+offset_bottom = 40.0
+text = "🏪 商店"
+
+[node name="LeaderboardBtn" type="Button" parent="BottomButtonRow"]
+layout_mode = 0
+offset_left = 772.0
+offset_top = 4.0
+offset_right = 820.0
+offset_bottom = 40.0
+text = "🏆"

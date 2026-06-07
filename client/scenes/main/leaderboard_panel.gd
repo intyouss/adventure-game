@@ -20,30 +20,39 @@ func _ready():
 	_refresh()
 
 func open_panel():
+	print("[UI] leaderboard_open")
+	visible = true
 	_is_open = true
 	anim_player.play("slide_in")
 
 func _collapse():
+	print("[UI] leaderboard_close")
 	_is_open = false
 	anim_player.play("slide_out")
+	await anim_player.animation_finished
+	visible = false
 
 func _setup_chapter_tabs():
+	var group = ButtonGroup.new()
 	for ch in range(1, 11):
 		var btn = Button.new()
 		btn.text = "第%d章" % ch
 		btn.toggle_mode = true
 		var chapter = ch
-		btn.pressed.connect(func(): _switch_chapter(chapter))
+		btn.button_group = group
+		btn.pressed.connect(_switch_chapter.bind(chapter))
 		chapter_tabs.add_child(btn)
 		if ch == 1:
 			btn.button_pressed = true
 
 func _switch_chapter(chapter: int):
+	print("[UI] leaderboard_chapter chapter=", chapter)
 	_current_chapter = chapter
 	_current_page = 1
 	_refresh()
 
 func _load_next_page():
+	print("[UI] action=leaderboard_load_more page=", _current_page)
 	_current_page += 1
 	_load_rankings(true)
 
@@ -71,7 +80,11 @@ func _load_rankings(append: bool):
 
 	var res = await NetworkManager.request("GET", "/api/leaderboard?page=%d&size=%d&chapter=%d" % [_current_page, _page_size, _current_chapter])
 	if res.code == 0:
-		var rankings = res.data.get("rankings", res.data if res.data is Array else [])
+		var rankings = []
+		if res.data is Array:
+			rankings = res.data
+		else:
+			rankings = res.data.get("rankings", [])
 		_has_more = rankings.size() >= _page_size
 		for entry in rankings:
 			var rank = entry.get("rank", "?")

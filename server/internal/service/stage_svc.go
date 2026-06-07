@@ -37,7 +37,7 @@ func parseStageID(stageID string) (int, int, error) {
 
 // GetChapterStages returns configs for all 10 levels in a chapter.
 func (s *StageService) GetChapterStages(ctx context.Context, chapter int) ([]model.StageConfig, error) {
-	var stages []model.StageConfig
+	stages := make([]model.StageConfig, 0, 10)
 	for level := 1; level <= 10; level++ {
 		stages = append(stages, model.GenerateStageConfig(chapter, level))
 	}
@@ -80,9 +80,11 @@ func (s *StageService) GetProgress(ctx context.Context, charID int64) (map[strin
 	if err != nil || char == nil {
 		return nil, fmt.Errorf("character not found")
 	}
+	nextCh, nextLv := s.nextStage(char.StageChapter, char.StageLevel)
 	return map[string]interface{}{
-		"chapter": char.StageChapter,
-		"level":   char.StageLevel,
+		"chapter":       char.StageChapter,
+		"level":         char.StageLevel,
+		"next_stage_id": fmt.Sprintf("%d-%d", nextCh, nextLv),
 	}, nil
 }
 

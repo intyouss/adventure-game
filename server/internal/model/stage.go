@@ -65,13 +65,11 @@ func GenerateStageConfig(chapter, level int) StageConfig {
 
 // CalculateRewards computes rewards for clearing a stage.
 func CalculateRewards(chapter, level int) StageRewards {
-	baseGold := int64(50 + chapter*10 + level*5)
 	baseTickets := int64(1)
 	chests := 2
 	if level == 10 { // boss level of chapter
-		baseGold = baseGold * 3
 		baseTickets = 3
 		chests = 3
 	}
-	return StageRewards{Gold: baseGold, SkillTickets: baseTickets, Chests: chests}
+	return StageRewards{Gold: 0, SkillTickets: baseTickets, Chests: chests}
 }

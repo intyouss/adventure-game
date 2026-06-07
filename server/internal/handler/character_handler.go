@@ -7,6 +7,7 @@ import (
 
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/errcode"
+	"github.com/adventure-game/server/pkg/logger"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -26,6 +27,7 @@ func (h *CharacterHandler) GetCharacter(c *gin.Context) {
 		return
 	}
 
+	logger.Info(c, "[GET_CHARACTER]")
 	char, err := h.svc.GetByAccountID(c.Request.Context(), accountID.(int64))
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errcode.Msg(errcode.ErrInternal))
@@ -51,6 +53,7 @@ func (h *CharacterHandler) AddExp(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[ADD_EXP]", "exp", req.Exp)
 	char, err := h.svc.AddExp(c.Request.Context(), charID, req.Exp)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())

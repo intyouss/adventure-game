@@ -112,6 +112,7 @@ func show_skill_effect(skill_id: String, pos: Vector2):
 	tween.tween_callback(label.queue_free)
 
 func _on_battle_ended(_summary):
+	print("[UI] action=renderer_battle_ended")
 	clear_all()
 
 func clear_all():

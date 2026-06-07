@@ -13,11 +13,17 @@ func _ready():
 	_refresh()
 
 func _refresh():
+	print("[UI] action=refresh_equip_area")
 	for slot_name in SLOTS:
 		var equip_uid = PlayerState.equipped.get(slot_name, "")
 		var btn = slot_grid.get_node_or_null(slot_name)
 		if not btn or not btn is Button:
 			continue
+		# Disconnect all previous bound connections to avoid duplicates
+		for conn in btn.pressed.get_connections():
+			btn.pressed.disconnect(conn.callable)
+		btn.pressed.connect(_on_unequip.bind(slot_name))
+
 		if equip_uid != "" and equip_uid != null:
 			var found = _find_item_by_uid(equip_uid)
 			if not found.is_empty():
@@ -31,10 +37,8 @@ func _refresh():
 			btn.text = "%s\n[空]" % SLOT_NAMES.get(slot_name, slot_name)
 			btn.modulate = Color.WHITE
 
-		var slot_name_for_connect = slot_name
-		btn.pressed.connect(func(): _on_unequip(slot_name_for_connect))
-
 func _on_unequip(slot_name: String):
+	print("[UI] unequip slot=", slot_name)
 	var equip_uid = PlayerState.equipped.get(slot_name, "")
 	if equip_uid == "" or equip_uid == null:
 		return

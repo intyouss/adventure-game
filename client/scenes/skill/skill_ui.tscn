@@ -1,0 +1,82 @@
+[gd_scene load_steps=2 format=3 uid="uid://skill_ui"]
+
+[ext_resource type="Script" path="res://scenes/skill/skill_ui.gd" id="1_skill_ui"]
+
+[node name="root" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_skill_ui")
+
+[node name="SkillSlots" type="HBoxContainer" parent="."]
+layout_mode = 1
+offset_top = 8.0
+offset_right = 600.0
+offset_bottom = 56.0
+alignment = 1
+theme_override_constants/separation = 6
+
+[node name="InnateSlot" type="Button" parent="SkillSlots"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 48)
+text = "[固定技能]"
+
+[node name="Slot1" type="Button" parent="SkillSlots"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 48)
+text = "[空]"
+
+[node name="Slot2" type="Button" parent="SkillSlots"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 48)
+text = "[空]"
+
+[node name="Slot3" type="Button" parent="SkillSlots"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 48)
+text = "[空]"
+
+[node name="Slot4" type="Button" parent="SkillSlots"]
+layout_mode = 2
+custom_minimum_size = Vector2(80, 48)
+text = "[空]"
+
+[node name="TicketLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 64.0
+offset_right = 300.0
+offset_bottom = 90.0
+text = "技能券: 0"
+
+[node name="SkillList" type="ItemList" parent="."]
+layout_mode = 1
+offset_left = 8.0
+offset_top = 94.0
+offset_right = 304.0
+offset_bottom = 300.0
+
+[node name="GachaButtons" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 308.0
+offset_right = 400.0
+offset_bottom = 344.0
+
+[node name="Gacha1" type="Button" parent="GachaButtons"]
+layout_mode = 2
+text = "抽1次"
+
+[node name="Gacha10" type="Button" parent="GachaButtons"]
+layout_mode = 2
+text = "抽10次"
+
+[node name="Gacha50" type="Button" parent="GachaButtons"]
+layout_mode = 2
+text = "抽50次"
+
+[node name="Gacha100" type="Button" parent="GachaButtons"]
+layout_mode = 2
+text = "抽100次"
+

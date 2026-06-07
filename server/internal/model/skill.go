@@ -32,10 +32,31 @@ var SkillQualityNames = map[int]string{
 
 // Initial skill pool (v1: 4 skills across 5 qualities).
 var SkillPool = []SkillConfig{
+	// Quality 1 - 普通
 	{ID: "s-fireball", Name: "火球术", Quality: 1, BaseCoeff: 1.2},
+	{ID: "s-iceshard", Name: "冰晶术", Quality: 1, BaseCoeff: 1.1},
+	{ID: "s-windblade", Name: "风刃", Quality: 1, BaseCoeff: 1.15},
+	{ID: "s-earthspike", Name: "地刺", Quality: 1, BaseCoeff: 1.25},
+	// Quality 2 - 优秀
 	{ID: "s-icebolt", Name: "冰锥术", Quality: 2, BaseCoeff: 1.5},
+	{ID: "s-firestorm", Name: "烈焰风暴", Quality: 2, BaseCoeff: 1.6},
+	{ID: "s-thunderclap", Name: "雷击", Quality: 2, BaseCoeff: 1.55},
+	{ID: "s-poisonmist", Name: "毒雾", Quality: 2, BaseCoeff: 1.45},
+	// Quality 3 - 稀有
 	{ID: "s-meteor", Name: "陨石术", Quality: 3, BaseCoeff: 2.0},
+	{ID: "s-blizzard", Name: "暴风雪", Quality: 3, BaseCoeff: 2.1},
+	{ID: "s-lightning", Name: "雷霆万钧", Quality: 3, BaseCoeff: 2.05},
+	{ID: "s-shadowstrike", Name: "暗影突袭", Quality: 3, BaseCoeff: 1.95},
+	// Quality 4 - 精良
+	{ID: "s-phoenix", Name: "凤凰涅槃", Quality: 4, BaseCoeff: 2.5},
+	{ID: "s-earthquake", Name: "地震术", Quality: 4, BaseCoeff: 2.6},
+	{ID: "s-holylight", Name: "圣光裁决", Quality: 4, BaseCoeff: 2.55},
+	{ID: "s-voidrift", Name: "虚空裂隙", Quality: 4, BaseCoeff: 2.45},
+	// Quality 5 - 传说
 	{ID: "s-dragonfire", Name: "龙息", Quality: 5, BaseCoeff: 3.0},
+	{ID: "s-ragnarok", Name: "诸神黄昏", Quality: 5, BaseCoeff: 3.2},
+	{ID: "s-celestial", Name: "天罚", Quality: 5, BaseCoeff: 3.1},
+	{ID: "s-apocalypse", Name: "末日降临", Quality: 5, BaseCoeff: 2.9},
 }
 
 // GachaPool maps shop level → allowed qualities + weight overrides.

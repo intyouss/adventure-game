@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math"
 	"math/big"
 
@@ -71,7 +72,7 @@ func (s *SkillService) calcSkillCoeff(baseCoeff float64, level int) float64 {
 
 // GachaPull performs one or more skill pulls.
 func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) ([]model.Skill, int64, error) {
-	if count < 1 || count > 10 {
+	if count < 1 || count > 100 {
 		return nil, 0, fmt.Errorf("invalid count: %d", count)
 	}
 
@@ -93,7 +94,7 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 		skills = make(map[string]model.Skill)
 	}
 
-	var results []model.Skill
+	results := make([]model.Skill, 0, count)
 	for i := 0; i < count; i++ {
 		quality := s.rollQuality(shopLevel)
 		// Find skills matching quality
@@ -135,7 +136,9 @@ func (s *SkillService) GachaPull(ctx context.Context, charID int64, count int) (
 	}
 
 	// Write currency log for tickets spent
-	_ = s.charRepo.InsertCurrencyLog(ctx, charID, "skill_ticket", -int64(count), "gacha_pull")
+	if err := s.charRepo.InsertCurrencyLog(ctx, charID, "skill_ticket", -int64(count), "gacha_pull"); err != nil {
+		slog.Error("insert currency log failed", "character_id", charID, "currency", "skill_ticket", "amount", -int64(count), "error", err)
+	}
 
 	return results, newTickets, nil
 }
@@ -161,6 +164,15 @@ func (s *SkillService) SetSkillSlot(ctx context.Context, charID int64, slot int,
 		slots = append(slots, nil)
 	}
 
+	// Prevent same skill in multiple slots
+	if skillID != "" {
+		for i, s := range slots {
+			if i != slot && s != nil && *s == skillID {
+				return fmt.Errorf("skill already equipped in slot %d", i)
+			}
+		}
+	}
+
 	if skillID == "" {
 		slots[slot] = nil
 	} else {
@@ -180,7 +192,7 @@ func (s *SkillService) ListSkills(ctx context.Context, charID int64) ([]model.Sk
 	}
 
 	// Try array format first, then map format
-	var skills []model.Skill
+	skills := []model.Skill{}
 	if err := json.Unmarshal([]byte(skillsJSON), &skills); err != nil {
 		// Fallback: try map format
 		var skillsMap map[string]model.Skill
@@ -202,7 +214,19 @@ func (s *SkillService) GetEquippedSkills(ctx context.Context, charID int64) ([]*
 	}
 	var slots []*string
 	if err := json.Unmarshal([]byte(slotsJSON), &slots); err != nil || slots == nil {
-		slots = make([]*string, 4)
+		// Fallback: try old object format {"1":"","2":"","3":"","4":""}
+		var oldSlots map[string]string
+		if err2 := json.Unmarshal([]byte(slotsJSON), &oldSlots); err2 == nil {
+			slots = make([]*string, 4)
+			for i := 0; i < 4; i++ {
+				if v, ok := oldSlots[fmt.Sprintf("%d", i+1)]; ok && v != "" {
+					s := v
+					slots[i] = &s
+				}
+			}
+		} else {
+			slots = make([]*string, 4)
+		}
 	}
 	for len(slots) < 4 {
 		slots = append(slots, nil)
@@ -274,15 +298,84 @@ func (s *SkillService) ShopInfo(ctx context.Context, charID int64) (map[string]i
 	shopLevel := s.shopLevelByPulls(totalPulls)
 	pullsToNext := 0
 	if shopLevel < model.MaxShopLevel {
-		required := int(math.Round(300 * math.Pow(1.25, float64(shopLevel))))
+		required := int(math.Round(300 * math.Pow(1.25, float64(shopLevel-1))))
 		if totalPulls < required {
 			pullsToNext = required - totalPulls
 		}
 	}
 
+	weights := model.GachaWeights(shopLevel)
+	activeQualities := make([]int, 0)
+	for q := 1; q <= model.MaxSkillQuality; q++ {
+		if _, ok := weights[q]; ok {
+			activeQualities = append(activeQualities, q)
+		}
+	}
+	var totalWeight float64
+	for _, w := range weights {
+		totalWeight += w
+	}
+	if totalWeight == 0 {
+		totalWeight = 1
+	}
+	probabilities := make(map[string]float64)
+	for q, w := range weights {
+		probabilities[fmt.Sprintf("quality_%d", q)] = math.Round(w/totalWeight*10000) / 100
+	}
+
 	return map[string]interface{}{
-		"shop_level":    shopLevel,
-		"total_pulls":   totalPulls,
-		"pulls_to_next": pullsToNext,
+		"shop_level":       shopLevel,
+		"total_pulls":      totalPulls,
+		"pulls_to_next":    pullsToNext,
+		"active_qualities": activeQualities,
+		"probabilities":    probabilities,
 	}, nil
+}
+
+// UpgradeAllSkills upgrades all owned skills that have enough cards, repeatedly until none can be upgraded.
+func (s *SkillService) UpgradeAllSkills(ctx context.Context, charID int64) (map[string]model.Skill, error) {
+	_, _, _, skillsJSON, err := s.repo.GetSkillsData(ctx, charID)
+	if err != nil {
+		return nil, fmt.Errorf("get skills data: %w", err)
+	}
+
+	var skills map[string]model.Skill
+	if err := json.Unmarshal([]byte(skillsJSON), &skills); err != nil || skills == nil {
+		return nil, fmt.Errorf("skill not found")
+	}
+
+	changed := true
+	for changed {
+		changed = false
+		for id, sk := range skills {
+			if sk.Level >= 30 {
+				continue
+			}
+			cardsNeeded := int(math.Ceil(float64(sk.Level) * 1.15))
+			if cardsNeeded > 50 {
+				cardsNeeded = 50
+			}
+			if sk.Cards >= cardsNeeded {
+				var baseCoeff float64
+				for _, sc := range model.SkillPool {
+					if sc.ID == id {
+						baseCoeff = sc.BaseCoeff
+						break
+					}
+				}
+				sk.Cards -= cardsNeeded
+				sk.Level++
+				sk.Coeff = s.calcSkillCoeff(baseCoeff, sk.Level)
+				skills[id] = sk
+				changed = true
+			}
+		}
+	}
+
+	newSkillsJSON, _ := json.Marshal(skills)
+	if err := s.repo.UpdateSkillItem(ctx, charID, string(newSkillsJSON)); err != nil {
+		return nil, fmt.Errorf("update skills: %w", err)
+	}
+
+	return skills, nil
 }

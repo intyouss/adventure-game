@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -18,19 +19,18 @@ import (
 )
 
 type AccountService struct {
-	repo     *repository.AccountRepo
-	charRepo *repository.CharacterRepo
-	redis    *redis.Client
-	jwtCfg   config.JWTConfig
+	repo      *repository.AccountRepo
+	charRepo  *repository.CharacterRepo
+	redis     *redis.Client
+	jwtCfg    config.JWTConfig
+	verifyCfg config.VerifyConfig
 }
 
-func NewAccountService(repo *repository.AccountRepo, charRepo *repository.CharacterRepo, rdb *redis.Client, jwtCfg config.JWTConfig) *AccountService {
-	return &AccountService{repo: repo, charRepo: charRepo, redis: rdb, jwtCfg: jwtCfg}
+func NewAccountService(repo *repository.AccountRepo, charRepo *repository.CharacterRepo, rdb *redis.Client, jwtCfg config.JWTConfig, verifyCfg config.VerifyConfig) *AccountService {
+	return &AccountService{repo: repo, charRepo: charRepo, redis: rdb, jwtCfg: jwtCfg, verifyCfg: verifyCfg}
 }
 
-// SendVerificationCode generates a 6-digit code, stores in Redis with 5-min TTL.
 func (s *AccountService) SendVerificationCode(ctx context.Context, target string) error {
-	// Rate limit: 60s cooldown
 	cooldownKey := "verify_cooldown:" + target
 	exists, err := s.redis.Exists(ctx, cooldownKey).Result()
 	if err != nil {
@@ -40,13 +40,11 @@ func (s *AccountService) SendVerificationCode(ctx context.Context, target string
 		return fmt.Errorf("send code too frequent")
 	}
 
-	// Generate 6-digit code
 	code, err := generateCode()
 	if err != nil {
 		return fmt.Errorf("generate code: %w", err)
 	}
 
-	// Store in Redis: 5 min TTL
 	data := map[string]interface{}{"code": code, "attempts": 0}
 	jsonData, _ := json.Marshal(data)
 	codeKey := "verify_code:" + target
@@ -54,7 +52,6 @@ func (s *AccountService) SendVerificationCode(ctx context.Context, target string
 		return fmt.Errorf("store code: %w", err)
 	}
 
-	// Set cooldown: 60s
 	if err := s.redis.Set(ctx, cooldownKey, "1", 60*time.Second).Err(); err != nil {
 		return fmt.Errorf("set cooldown: %w", err)
 	}
@@ -62,8 +59,11 @@ func (s *AccountService) SendVerificationCode(ctx context.Context, target string
 	return nil
 }
 
-// VerifyCode validates a verification code. Returns nil if valid, error otherwise.
 func (s *AccountService) VerifyCode(ctx context.Context, target, code string) error {
+	if s.verifyCfg.TestCode != "" && code == s.verifyCfg.TestCode {
+		return nil
+	}
+
 	codeKey := "verify_code:" + target
 	raw, err := s.redis.Get(ctx, codeKey).Result()
 	if err == redis.Nil {
@@ -94,14 +94,11 @@ func (s *AccountService) VerifyCode(ctx context.Context, target, code string) er
 		return fmt.Errorf("wrong code")
 	}
 
-	// Code valid — delete from Redis
 	s.redis.Del(ctx, codeKey)
 	s.redis.Del(ctx, "verify_cooldown:"+target)
 	return nil
 }
 
-// RegisterRequest represents a registration request.
-// Uses phone/email/password/code/nickname fields.
 type RegisterRequest struct {
 	Phone    string `json:"phone"`
 	Email    string `json:"email"`
@@ -110,14 +107,12 @@ type RegisterRequest struct {
 	Nickname string `json:"nickname"`
 }
 
-// LoginRequest represents a login request.
-// Uses "account" key that accepts phone or email.
 type LoginRequest struct {
 	Account  string `json:"account" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Password string `json:"password"`
+	Code     string `json:"code"`
 }
 
-// TokenPair contains an access token and refresh token.
 type TokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -126,9 +121,7 @@ type TokenPair struct {
 	CharacterID  int64  `json:"character_id"`
 }
 
-// Register handles new user registration.
 func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*TokenPair, error) {
-	// Determine target: phone or email
 	target := req.Phone
 	targetType := "phone"
 	if target == "" {
@@ -139,12 +132,10 @@ func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*To
 		return nil, fmt.Errorf("phone/email required")
 	}
 
-	// Verify code
 	if err := s.VerifyCode(ctx, target, req.Code); err != nil {
 		return nil, err
 	}
 
-	// Check existing
 	var existing *model.Account
 	var err error
 	if targetType == "phone" {
@@ -159,24 +150,21 @@ func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*To
 		return nil, fmt.Errorf("already registered")
 	}
 
-	// Hash password
 	hash, err := password.Hash(req.Password)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	// Create account
 	account := &model.Account{PasswordHash: hash}
 	if targetType == "phone" {
-		account.Phone = target
+		account.Phone = sql.NullString{String: target, Valid: true}
 	} else {
-		account.Email = target
+		account.Email = sql.NullString{String: target, Valid: true}
 	}
 	if err := s.repo.Create(ctx, account); err != nil {
 		return nil, fmt.Errorf("create account: %w", err)
 	}
 
-	// Auto-create character for the new account
 	nickname := req.Nickname
 	if nickname == "" {
 		nickname = fmt.Sprintf("冒险家%06d", account.ID)
@@ -198,9 +186,7 @@ func (s *AccountService) Register(ctx context.Context, req RegisterRequest) (*To
 	return s.generateTokens(account.ID, char.ID)
 }
 
-// Login authenticates a user and returns tokens.
 func (s *AccountService) Login(ctx context.Context, req LoginRequest) (*TokenPair, error) {
-	// Find account by phone or email (using "account" field)
 	account, err := s.repo.FindByPhone(ctx, req.Account)
 	if err != nil {
 		return nil, fmt.Errorf("find account: %w", err)
@@ -215,12 +201,28 @@ func (s *AccountService) Login(ctx context.Context, req LoginRequest) (*TokenPai
 		return nil, fmt.Errorf("account not found")
 	}
 
-	// Verify password
-	if !password.Verify(req.Password, account.PasswordHash) {
-		return nil, fmt.Errorf("wrong password")
+	if req.Password != "" {
+		// Branch 3: Account + Password login
+		if !password.Verify(req.Password, account.PasswordHash) {
+			return nil, fmt.Errorf("wrong password")
+		}
+	} else if req.Code != "" {
+		// Branch 1 & 2: Phone/Email + Verification Code login
+		// First: check if code matches stored quick_code (shared input param)
+		if !(account.QuickCode.Valid && req.Code == account.QuickCode.String) {
+			// Verify as verification code via Redis
+			target := account.PhoneStr()
+			if target == "" {
+				target = account.EmailStr()
+			}
+			if err := s.VerifyCode(ctx, target, req.Code); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		return nil, fmt.Errorf("password or code required")
 	}
 
-	// Look up character for this account
 	char, err := s.charRepo.FindByAccountID(ctx, account.ID)
 	if err != nil {
 		return nil, fmt.Errorf("find character: %w", err)
@@ -233,7 +235,6 @@ func (s *AccountService) Login(ctx context.Context, req LoginRequest) (*TokenPai
 	return s.generateTokens(account.ID, charID)
 }
 
-// RefreshAccessToken generates a new access token from a valid refresh token.
 func (s *AccountService) RefreshAccessToken(ctx context.Context, refreshToken string) (*TokenPair, error) {
 	key := "refresh_token:" + refreshToken
 	raw, err := s.redis.Get(ctx, key).Result()
@@ -252,7 +253,6 @@ func (s *AccountService) RefreshAccessToken(ctx context.Context, refreshToken st
 		return nil, fmt.Errorf("parse token data: %w", err)
 	}
 
-	// Delete old refresh token (rotation)
 	s.redis.Del(ctx, key)
 
 	return s.generateTokens(data.AccountID, data.CharacterID)
@@ -264,7 +264,6 @@ func (s *AccountService) generateTokens(accountID, characterID int64) (*TokenPai
 		return nil, fmt.Errorf("generate access token: %w", err)
 	}
 
-	// Generate refresh token (UUID stored in Redis)
 	refreshToken, err := generateUUID()
 	if err != nil {
 		return nil, fmt.Errorf("generate refresh token: %w", err)

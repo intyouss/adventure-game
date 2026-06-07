@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/lib/pq"
+
 	"github.com/adventure-game/server/internal/model"
 )
 
@@ -15,6 +17,9 @@ type CharacterRepo struct {
 func NewCharacterRepo(db *sql.DB) *CharacterRepo {
 	return &CharacterRepo{db: db}
 }
+// DB returns the underlying *sql.DB so callers can begin transactions.
+func (r *CharacterRepo) DB() *sql.DB { return r.db }
+
 
 func (r *CharacterRepo) Create(ctx context.Context, c *model.Character) error {
 	return r.db.QueryRowContext(ctx,
@@ -73,9 +78,9 @@ func (r *CharacterRepo) FindByIDForUpdate(ctx context.Context, tx *sql.Tx, id in
 
 func (r *CharacterRepo) UpdateStats(ctx context.Context, c *model.Character) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE characters SET level=$1, exp=$2, gold=$3, skill_tickets=$4, stage_chapter=$5, stage_level=$6, updated_at=NOW()
-		 WHERE id=$7`,
-		c.Level, c.Exp, c.Gold, c.SkillTickets, c.StageChapter, c.StageLevel, c.ID,
+		`UPDATE characters SET level=$1, exp=$2, gold=$3, skill_tickets=$4, chest_count=$5, zone_level=$6, stage_chapter=$7, stage_level=$8, updated_at=NOW()
+		 WHERE id=$9`,
+		c.Level, c.Exp, c.Gold, c.SkillTickets, c.ChestCount, c.ZoneLevel, c.StageChapter, c.StageLevel, c.ID,
 	)
 	return err
 }
@@ -83,9 +88,9 @@ func (r *CharacterRepo) UpdateStats(ctx context.Context, c *model.Character) err
 // UpdateStatsInTx updates stats within a transaction.
 func (r *CharacterRepo) UpdateStatsInTx(ctx context.Context, tx *sql.Tx, c *model.Character) error {
 	_, err := tx.ExecContext(ctx,
-		`UPDATE characters SET level=$1, exp=$2, gold=$3, skill_tickets=$4, stage_chapter=$5, stage_level=$6, updated_at=NOW()
-		 WHERE id=$7`,
-		c.Level, c.Exp, c.Gold, c.SkillTickets, c.StageChapter, c.StageLevel, c.ID,
+		`UPDATE characters SET level=$1, exp=$2, gold=$3, skill_tickets=$4, chest_count=$5, zone_level=$6, stage_chapter=$7, stage_level=$8, updated_at=NOW()
+		 WHERE id=$9`,
+		c.Level, c.Exp, c.Gold, c.SkillTickets, c.ChestCount, c.ZoneLevel, c.StageChapter, c.StageLevel, c.ID,
 	)
 	return err
 }
@@ -133,6 +138,29 @@ func (r *CharacterRepo) DeductGold(ctx context.Context, charID int64, amount int
 }
 
 // InsertCurrencyLog writes a currency transaction log entry.
+
+// FindByIDs returns characters for the given ids (batch lookup for leaderboard).
+func (r *CharacterRepo) FindByIDs(ctx context.Context, ids []int64) (map[int64]*model.Character, error) {
+	if len(ids) == 0 {
+		return map[int64]*model.Character{}, nil
+	}
+	query := `SELECT id, account_id, class, nickname, level, exp, gold, skill_tickets, chest_count, zone_level, stage_chapter, stage_level, created_at, updated_at FROM characters WHERE id = ANY($1)`
+	rows, err := r.db.QueryContext(ctx, query, pq.Array(ids))
+	if err != nil {
+		return nil, fmt.Errorf("batch find by ids: %w", err)
+	}
+	defer rows.Close()
+	result := make(map[int64]*model.Character, len(ids))
+	for rows.Next() {
+		c := &model.Character{}
+		if err := rows.Scan(&c.ID, &c.AccountID, &c.Class, &c.Nickname, &c.Level, &c.Exp, &c.Gold, &c.SkillTickets, &c.ChestCount, &c.ZoneLevel, &c.StageChapter, &c.StageLevel, &c.CreatedAt, &c.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan character: %w", err)
+		}
+		result[c.ID] = c
+	}
+	return result, rows.Err()
+}
+
 func (r *CharacterRepo) InsertCurrencyLog(ctx context.Context, charID int64, currency string, amount int64, reason string) error {
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO currency_logs (character_id, currency, amount, reason) VALUES ($1, $2, $3, $4)`,
