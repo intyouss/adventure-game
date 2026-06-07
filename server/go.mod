@@ -12,7 +12,10 @@ require (
 
 require github.com/golang-jwt/jwt/v5 v5.3.1
 
-require go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
+require (
+	github.com/google/uuid v1.6.0 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
+)
 
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect

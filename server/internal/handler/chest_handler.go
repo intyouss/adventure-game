@@ -7,6 +7,7 @@ import (
 
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/errcode"
+	"github.com/adventure-game/server/pkg/logger"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -22,6 +23,7 @@ func NewChestHandler(svc *service.ChestService) *ChestHandler {
 func (h *ChestHandler) GetChestInfo(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[CHEST_INFO]")
 	info, err := h.svc.GetChestInfo(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -43,6 +45,7 @@ func (h *ChestHandler) OpenChest(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[OPEN_CHEST]", "count", req.Count)
 	results, remaining, err := h.svc.OpenChest(c.Request.Context(), charID, req.Count)
 	if err != nil {
 		if err.Error() == "insufficient chests" {
@@ -64,6 +67,7 @@ func (h *ChestHandler) OpenChest(c *gin.Context) {
 func (h *ChestHandler) UpgradeZone(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[UPGRADE_ZONE]")
 	newLevel, goldRemaining, err := h.svc.UpgradeZone(c.Request.Context(), charID)
 	if err != nil {
 		if err.Error() == "insufficient gold" {

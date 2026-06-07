@@ -7,6 +7,7 @@ import (
 
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/errcode"
+	"github.com/adventure-game/server/pkg/logger"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -33,6 +34,7 @@ func (h *SkillHandler) Gacha(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GACHA]", "count", req.Count)
 	results, remaining, err := h.svc.GachaPull(c.Request.Context(), charID, req.Count)
 	if err != nil {
 		if err.Error() == "insufficient skill tickets" {
@@ -62,6 +64,7 @@ func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[SET_SKILL_SLOT]", "slot", req.Slot, "skill_id", req.SkillID)
 	if err := h.svc.SetSkillSlot(c.Request.Context(), charID, req.Slot, req.SkillID); err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrSkillSlotOccupied, err.Error())
 		return
@@ -74,6 +77,7 @@ func (h *SkillHandler) SetSkillSlot(c *gin.Context) {
 func (h *SkillHandler) ListSkills(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[LIST_SKILLS]")
 	skills, err := h.svc.ListSkills(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -88,6 +92,7 @@ func (h *SkillHandler) ListSkills(c *gin.Context) {
 func (h *SkillHandler) GetSkillSlots(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GET_SKILL_SLOTS]")
 	slots, err := h.svc.GetEquippedSkills(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
@@ -119,6 +124,7 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[UPGRADE_SKILL]", "skill_id", req.SkillID)
 	skill, err := h.svc.UpgradeSkill(c.Request.Context(), charID, req.SkillID)
 	if err != nil {
 		errMsg := err.Error()
@@ -142,6 +148,7 @@ func (h *SkillHandler) UpgradeSkill(c *gin.Context) {
 func (h *SkillHandler) ShopInfo(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[SKILL_SHOP_INFO]")
 	info, err := h.svc.ShopInfo(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())

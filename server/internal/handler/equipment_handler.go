@@ -7,6 +7,7 @@ import (
 
 	"github.com/adventure-game/server/internal/service"
 	"github.com/adventure-game/server/pkg/errcode"
+	"github.com/adventure-game/server/pkg/logger"
 	"github.com/adventure-game/server/pkg/response"
 )
 
@@ -23,6 +24,7 @@ func NewEquipmentHandler(svc *service.EquipmentService) *EquipmentHandler {
 func (h *EquipmentHandler) GetInventory(c *gin.Context) {
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[GET_INVENTORY]")
 	inventory, equipped, err := h.svc.GetInventory(c.Request.Context(), charID)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, errcode.Msg(errcode.ErrInternal))
@@ -48,6 +50,7 @@ func (h *EquipmentHandler) Decompose(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[DECOMPOSE]", "count", len(req.ItemUIDs))
 	exp, gold, err := h.svc.Decompose(c.Request.Context(), charID, req.ItemUIDs)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, errcode.ErrItemNotFound, err.Error())
@@ -71,6 +74,7 @@ func (h *EquipmentHandler) Equip(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[EQUIP]", "slot", req.Slot, "uid", req.ItemUID)
 	if err := h.svc.Equip(c.Request.Context(), charID, req.ItemUID, req.Slot); err != nil {
 		errMsg := err.Error()
 		switch {
@@ -99,6 +103,7 @@ func (h *EquipmentHandler) Unequip(c *gin.Context) {
 
 	charID := c.GetInt64("character_id")
 
+	logger.Info(c, "[UNEQUIP]", "slot", req.Slot)
 	if err := h.svc.Unequip(c.Request.Context(), charID, req.Slot); err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
 		return
