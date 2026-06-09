@@ -1,47 +1,42 @@
+﻿# BottomButtonRow - 4-Tab bottom navigation bar per v4 spec
+# Tabs: ⚔️战斗 | 📖技能仓库 | 🏪商店 | 🏆排行榜
+class_name BottomButtonRow
 extends Control
 
-signal mode_changed(mode: int)
+enum Tab { BATTLE, SKILL, SHOP, LEADERBOARD }
 
-enum Mode { NORMAL, SKILL_INVENTORY, SHOP }
+signal tab_pressed(tab: int)
 
-@onready var skill_btn = $SkillBtn
-@onready var shop_btn = $ShopBtn
-@onready var leaderboard_btn = $LeaderboardBtn
+@onready var battle_btn: Button = $BattleBtn
+@onready var skill_btn: Button = $SkillBtn
+@onready var shop_btn: Button = $ShopBtn
+@onready var leaderboard_btn: Button = $LeaderboardBtn
 
-var _current_mode: int = 0
+var _active_tab: int = Tab.BATTLE
 
-func _ready():
-	skill_btn.pressed.connect(_on_skill_pressed)
-	shop_btn.pressed.connect(_on_shop_pressed)
-	leaderboard_btn.pressed.connect(_on_leaderboard_pressed)
+func _ready() -> void:
+	battle_btn.pressed.connect(func() -> void: _on_tab(Tab.BATTLE))
+	skill_btn.pressed.connect(func() -> void: _on_tab(Tab.SKILL))
+	shop_btn.pressed.connect(func() -> void: _on_tab(Tab.SHOP))
+	leaderboard_btn.pressed.connect(func() -> void: _on_tab(Tab.LEADERBOARD))
+	_update_highlight()
+	Log.info("BottomNav", "4-Tab navigation ready")
 
-func _on_skill_pressed():
-	print("[UI] btn=skill_warehouse old_mode=", _current_mode)
-	if _current_mode == Mode.SKILL_INVENTORY:
-		_current_mode = Mode.NORMAL
-		mode_changed.emit(Mode.NORMAL)
-	else:
-		_current_mode = Mode.SKILL_INVENTORY
-		mode_changed.emit(Mode.SKILL_INVENTORY)
+func _on_tab(tab: int) -> void:
+	_active_tab = tab
+	_update_highlight()
+	tab_pressed.emit(tab)
+	Log.debug("BottomNav", "Tab pressed", {"tab": Tab.keys()[tab] if tab < Tab.size() else "?"})
+
+func set_active_tab(tab: int) -> void:
+	_active_tab = tab
 	_update_highlight()
 
-func _on_shop_pressed():
-	print("[UI] btn=shop old_mode=", _current_mode)
-	if _current_mode == Mode.SHOP:
-		_current_mode = Mode.NORMAL
-		mode_changed.emit(Mode.NORMAL)
-	else:
-		_current_mode = Mode.SHOP
-		mode_changed.emit(Mode.SHOP)
-	_update_highlight()
-
-func _on_leaderboard_pressed():
-	print("[UI] btn=leaderboard")
-	pass  # Handled by main_ui via direct connection
-
-func set_active_mode(mode: int):
-	_current_mode = mode
-	_update_highlight()
-
-func _update_highlight():
-	skill_btn.modulate = Color.YELLOW if _current_mode == Mode.SKILL_INVENTORY else Color.WHITE
+func _update_highlight() -> void:
+	var tabs: Array[Button] = [battle_btn, skill_btn, shop_btn, leaderboard_btn]
+	for i: int in range(tabs.size()):
+		var btn: Button = tabs[i]
+		if i == _active_tab:
+			btn.modulate = Color(0.42, 0.36, 0.91)  # Purple #6c5ce7
+		else:
+			btn.modulate = Color(0.63, 0.68, 0.75)  # Gray #a0aec0

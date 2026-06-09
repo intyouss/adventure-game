@@ -1,12 +1,17 @@
-﻿extends Node
+﻿# AudioManager - Audio playback control
+class_name AudioManager
+extends Node
 
 var _enabled: bool = true
 
-func play_sfx(sfx_name: String):
+func play_sfx(sfx_name: String) -> void:
 	if not _enabled:
 		return
-	# Placeholder — will play sounds when assets are added
-	print("[Audio] Playing: ", sfx_name)
+	Log.debug("Audio", "Playing SFX", {"sfx": sfx_name})
 
-func toggle():
+func toggle() -> void:
 	_enabled = not _enabled
+	Log.info("Audio", "Audio toggled", {"enabled": _enabled})
+
+func is_enabled() -> bool:
+	return _enabled
