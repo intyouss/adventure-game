@@ -1,33 +1,33 @@
+﻿# EquipmentArea - Equipment slot display (view-only, no unequip per v4 spec)
+class_name EquipmentArea
 extends Control
 
-const SLOTS = ["weapon","helmet","armor","shoes","ring1","ring2","necklace","bracer","belt","gloves"]
-const SLOT_NAMES = {
-	"weapon":"武器","helmet":"头盔","armor":"铠甲","shoes":"鞋子",
-	"ring1":"戒指1","ring2":"戒指2","necklace":"项链","bracer":"护腕","belt":"腰带","gloves":"手套"
+const SLOTS: Array[String] = ["weapon", "helmet", "armor", "shoes", "ring1", "ring2", "necklace", "bracer", "belt", "gloves"]
+const SLOT_NAMES: Dictionary = {
+	"weapon": "武器", "helmet": "头盔", "armor": "铠甲", "shoes": "鞋子",
+	"ring1": "戒指1", "ring2": "戒指2", "necklace": "项链", "bracer": "护腕",
+	"belt": "腰带", "gloves": "手套",
 }
 
-@onready var slot_grid = $SlotGrid
+@onready var slot_grid: GridContainer = $SlotGrid
 
-func _ready():
+func _ready() -> void:
 	EventBus.inventory_changed.connect(_refresh)
 	_refresh()
+	Log.info("EquipmentArea", "Equipment area ready (view-only, no unequip)")
 
-func _refresh():
-	print("[UI] action=refresh_equip_area")
-	for slot_name in SLOTS:
-		var equip_uid = PlayerState.equipped.get(slot_name, "")
-		var btn = slot_grid.get_node_or_null(slot_name)
+func _refresh() -> void:
+	Log.debug("EquipmentArea", "Refreshing equipment display")
+	for slot_name: String in SLOTS:
+		var equip_uid: Variant = PlayerState.equipped.get(slot_name, "")
+		var btn: Button = slot_grid.get_node_or_null(slot_name)
 		if not btn or not btn is Button:
 			continue
-		# Disconnect all previous bound connections to avoid duplicates
-		for conn in btn.pressed.get_connections():
-			btn.pressed.disconnect(conn.callable)
-		btn.pressed.connect(_on_unequip.bind(slot_name))
 
 		if equip_uid != "" and equip_uid != null:
-			var found = _find_item_by_uid(equip_uid)
+			var found: Dictionary = _find_item_by_uid(str(equip_uid))
 			if not found.is_empty():
-				var model = EquipmentModel.new().from_dict(found)
+				var model := EquipmentModel.new().from_dict(found)
 				btn.text = "%s\n%s" % [SLOT_NAMES.get(slot_name, slot_name), model.get_quality_name()]
 				btn.modulate = model.get_quality_color()
 			else:
@@ -37,17 +37,8 @@ func _refresh():
 			btn.text = "%s\n[空]" % SLOT_NAMES.get(slot_name, slot_name)
 			btn.modulate = Color.WHITE
 
-func _on_unequip(slot_name: String):
-	print("[UI] unequip slot=", slot_name)
-	var equip_uid = PlayerState.equipped.get(slot_name, "")
-	if equip_uid == "" or equip_uid == null:
-		return
-	await NetworkManager.request("POST", "/api/equipment/unequip", {"slot": slot_name})
-	await PlayerState.load_equipment()
-	_refresh()
-
 func _find_item_by_uid(uid: String) -> Dictionary:
-	for item in PlayerState.equipment_inventory:
+	for item: Dictionary in PlayerState.equipment_inventory:
 		if item.get("uid", item.get("id", "")) == uid:
 			return item
 	return {}

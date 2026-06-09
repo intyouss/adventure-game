@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冒险大作战 - UI设计稿 v4</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f0f4f8;color:#2d3748;font-family:system-ui,sans-serif;padding:20px}
+h1{text-align:center;color:#6c5ce7;font-size:28px;letter-spacing:4px;padding:20px 0}
+.sub{text-align:center;color:#a0aec0;font-size:14px;margin-bottom:30px}
+.sec{margin-bottom:40px}
+.sec h2{font-size:20px;color:#6c5ce7;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #e2e8f0}
+.scrs{display:flex;gap:24px;flex-wrap:wrap;justify-content:center}
+.ph{width:360px;height:700px;border-radius:28px;border:3px solid #cbd5e0;overflow:hidden;position:relative;background:#f7fafc;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,.1);margin-bottom:24px}
+.pl{text-align:center;font-size:12px;color:#a0aec0;margin-top:4px}
+
+/* LOGIN */
+.login{display:flex;flex-direction:column;height:100%;background:linear-gradient(180deg,#e8f5e9,#c8e6c9 50%,#a5d6a7);padding:16px}
+.login h2{color:#ff6b6b;font-size:22px;letter-spacing:4px;text-align:center;margin:40px 0 4px;text-shadow:1px 1px 0 #fff}
+.login p{color:#666;font-size:12px;text-align:center;margin-bottom:20px}
+.tabs{display:flex;border-bottom:2px solid #a5d6a7;margin-bottom:16px}
+.tab{flex:1;text-align:center;padding:8px 0;font-size:12px;color:#666;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;border-radius:6px 6px 0 0}
+.tab.on{color:#ff6b6b;border-bottom-color:#ff6b6b;background:rgba(255,107,107,.08)}
+.inp{background:#fff;border:2px solid #c8e6c9;border-radius:12px;padding:10px 14px;color:#2d3748;font-size:14px;outline:none;width:100%;margin-bottom:8px}
+.inp::placeholder{color:#a0aec0}
+.inp:focus{border-color:#6c5ce7}
+.row{display:flex;gap:6px;margin-bottom:8px}
+.row .inp{flex:1}
+.code-btn{background:#6c5ce7;color:#fff;border:none;border-radius:10px;padding:0 14px;font-size:11px;white-space:nowrap;cursor:pointer;font-weight:bold}
+.big-btn{background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;border:none;border-radius:14px;padding:12px;font-size:15px;font-weight:bold;letter-spacing:4px;cursor:pointer;width:100%;margin-top:8px;box-shadow:0 4px 12px rgba(255,107,107,.3)}
+.switch-link{text-align:center;margin-top:10px;color:#6c5ce7;font-size:12px;cursor:pointer}
+
+/* GLOBAL HUD */
+.main{display:flex;flex-direction:column;height:100%;background:#f7fafc}
+.hud{display:flex;align-items:center;padding:8px 12px;gap:6px;background:#fff;border-bottom:2px solid #e2e8f0;flex-shrink:0}
+.lv{background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;border-radius:8px;padding:3px 8px;font-size:11px;font-weight:bold}
+.xp{flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.xp-f{height:100%;width:65%;background:linear-gradient(90deg,#4ade80,#22c55e);border-radius:4px}
+.res{display:flex;gap:6px;font-size:10px;font-weight:bold}
+.gold{color:#f6ad55}.ticket{color:#6c5ce7}.cp{color:#e53e3e}
+
+/* BATTLE AREA */
+.battle{padding:8px 10px;flex:1;display:flex;flex-direction:column;justify-content:center}
+.stage-name{text-align:center;font-size:13px;color:#718096;margin-bottom:1px}
+.stage-num{text-align:center;font-size:22px;font-weight:bold;color:#2d3748;margin-bottom:6px}
+.scene{display:flex;align-items:center;justify-content:space-around;background:linear-gradient(180deg,#ebf8ff,#f7fafc);border-radius:14px;padding:16px;margin:4px 0;border:2px solid #bee3f8;min-height:100px;position:relative;flex:1}
+.av{width:52px;height:68px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.av-p{background:linear-gradient(135deg,#90cdf4,#63b3ed);border:2px solid #4299e1}
+.av-m{background:linear-gradient(135deg,#feb2b2,#fc8181);border:2px solid #f56565}
+.hp{width:52px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin:3px auto}
+.hp-p{height:100%;width:80%;background:linear-gradient(90deg,#68d391,#48bb78);border-radius:3px}
+.hp-m{height:100%;width:60%;background:linear-gradient(90deg,#fc8181,#f56565);border-radius:3px}
+.nm{font-size:10px;color:#718096;text-align:center;font-weight:bold}
+.vs{font-size:20px;color:#f6ad55;font-weight:bold}
+.sk-slots{display:flex;gap:5px;justify-content:center;margin-top:8px}
+.sk-slot{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sk-innate{background:linear-gradient(135deg,#fbd38d,#f6ad55);border:2px solid #ed8936;box-shadow:0 2px 6px rgba(246,173,85,.3)}
+.sk-empty{background:#edf2f7;border:2px dashed #cbd5e0}
+.sk-equip{background:#ebf8ff;border:2px solid #90cdf4}
+
+/* BATTLE LIVE (inside battle area) */
+.battle-hud{display:flex;justify-content:space-between;align-items:center;padding:4px 10px;background:rgba(255,255,255,.9);border-radius:8px;margin-bottom:4px;font-size:10px;color:#718096;border:1px solid #e2e8f0}
+.battle-hud .wave{color:#2d3748;font-weight:bold}
+.battle-hud .boss{color:#e53e3e;font-weight:bold}
+.battle-prog{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.battle-prog-f{height:100%;width:33%;background:linear-gradient(90deg,#f6ad55,#ed8936);border-radius:3px}
+
+/* EQUIP */
+.equip{padding:6px 10px}
+.equip-title{font-size:11px;color:#718096;margin-bottom:4px}
+.eq-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.eq-slot{background:#fff;border:2px solid #e2e8f0;border-radius:8px;text-align:center;padding:5px 1px;cursor:pointer;font-size:8px;line-height:1.3;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.eq-n{color:#718096;font-size:8px}.eq-q{font-size:9px;font-weight:bold}
+.c-green{color:#48bb78}.c-blue{color:#4299e1}.c-purple{color:#9f7aea}.c-dim{color:#cbd5e0}
+
+/* CHEST */
+.chest{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff;border-top:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0}
+.chest-info{font-size:10px;color:#718096;font-weight:bold}.chest-info span{margin-right:6px}
+.ch-btn{padding:5px 12px;border-radius:10px;border:none;font-size:10px;font-weight:bold;cursor:pointer}
+.ch-open{background:linear-gradient(135deg,#f6ad55,#ed8936);color:#fff;box-shadow:0 2px 6px rgba(237,137,54,.3)}
+.ch-up{background:#edf2f7;color:#718096;border:2px solid #e2e8f0}
+
+/* NAV */
+.nav{display:flex;background:#fff;border-top:2px solid #e2e8f0;margin-top:auto}
+.nav-b{flex:1;text-align:center;padding:8px 0 6px;cursor:pointer;border:none;background:none;color:#a0aec0;font-size:11px;border-top:3px solid transparent;border-radius:0;font-weight:bold}
+.nav-b.on{color:#6c5ce7;border-top-color:#6c5ce7;background:rgba(108,92,231,.05)}
+
+/* SKILL PANEL */
+.sk-panel{display:flex;flex-direction:column;height:100%;background:#f7fafc}
+.sk-bar{display:flex;gap:6px;padding:10px;background:#fff;border-bottom:2px solid #e2e8f0;justify-content:center}
+.sk-eq{width:50px;height:50px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;cursor:pointer;font-weight:bold}
+.sk-eq-in{background:linear-gradient(135deg,#fbd38d,#f6ad55);border:2px solid #ed8936;color:#fff}
+.sk-eq-fill{background:#ebf8ff;border:2px solid #90cdf4;color:#2d3748}
+.sk-eq-empty{background:#edf2f7;border:2px dashed #cbd5e0;color:#cbd5e0}
+.sk-hdr{display:flex;justify-content:space-between;align-items:center;padding:6px 10px}
+.sk-hdr span{font-size:11px;color:#718096}
+.up-btn{background:#6c5ce7;color:#fff;border:none;border-radius:8px;padding:4px 12px;font-size:10px;cursor:pointer;font-weight:bold}
+.sk-scroll{flex:1;overflow-y:auto;padding:0 10px 10px}
+.sk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.sk-card{background:#fff;border-radius:10px;padding:10px 3px;text-align:center;cursor:pointer;border:2px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.sk-card .i{font-size:20px;margin-bottom:2px}
+.sk-card .n{font-size:9px;color:#2d3748;font-weight:bold}
+.sk-card .l{font-size:8px;color:#a0aec0}
+.b-green{border-color:#48bb78;background:#f0fff4}.b-blue{border-color:#4299e1;background:#ebf8ff}.b-purple{border-color:#9f7aea;background:#faf5ff}.b-orange{border-color:#ed8936;background:#fffaf0}
+
+/* SHOP */
+.shop{display:flex;flex-direction:column;height:100%;background:#f7fafc}
+.shop-hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fff;border-bottom:2px solid #e2e8f0}
+.shop-hdr h3{color:#6c5ce7;font-size:14px}
+.shop-x{background:none;border:none;color:#a0aec0;font-size:16px;cursor:pointer}
+.shop-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px 10px;flex:1;overflow-y:auto}
+.shop-card{background:#fff;border-radius:12px;padding:14px 10px;text-align:center;border:2px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.shop-card .si{font-size:26px;margin-bottom:3px}
+.shop-card .sn{font-size:13px;color:#2d3748;margin-bottom:4px;font-weight:bold}
+.shop-card .s-level{font-size:10px;color:#a0aec0;margin-bottom:6px}
+.gacha-btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.g-btn{padding:4px 8px;border-radius:8px;border:none;font-size:9px;font-weight:bold;cursor:pointer}
+.g1{background:linear-gradient(135deg,#f6ad55,#ed8936);color:#fff;box-shadow:0 2px 4px rgba(237,137,54,.3)}
+.g2{background:#edf2f7;color:#4a5568;border:2px solid #e2e8f0}
+.shop-card.lock{opacity:.4}
+.lt{color:#cbd5e0;font-size:11px;margin-top:6px}
+
+/* LEADERBOARD */
+.lb{display:flex;flex:1;background:#f7fafc;position:relative}
+.lb-bg{position:absolute;inset:0;background:rgba(0,0,0,.3)}
+.lb-panel{position:absolute;right:0;top:0;bottom:0;width:280px;background:#fff;border-left:2px solid #e2e8f0;display:flex;flex-direction:column;animation:si .3s ease;border-radius:16px 0 0 16px}
+@keyframes si{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.lb-hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:2px solid #e2e8f0}
+.lb-hdr h3{color:#6c5ce7;font-size:13px}
+.lb-col{background:none;border:none;color:#a0aec0;cursor:pointer;font-size:12px}
+.lb-list{flex:1;overflow-y:auto;padding:0 6px}
+.lb-row{display:flex;align-items:center;padding:5px 6px;border-radius:8px;margin-bottom:2px;font-size:10px;gap:6px}
+.lb-row.me{background:rgba(108,92,231,.08);border:1px solid rgba(108,92,231,.2)}
+.lb-r{width:28px;text-align:center;font-weight:bold;color:#f6ad55}
+.lb-r.r1{color:#ed8936}.lb-r.r2{color:#a0aec0}.lb-r.r3{color:#dd6b20}
+.lb-n{flex:1;color:#2d3748;font-weight:bold}
+.lb-l{color:#a0aec0}
+.lb-c{color:#9f7aea;font-weight:bold}
+.lb-more{text-align:center;padding:6px;color:#6c5ce7;font-size:11px;cursor:pointer}
+
+/* POPUPS */
+.pop-ov{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10}
+.pop{background:#fff;border-radius:16px;padding:16px;width:300px;border:2px solid #e2e8f0;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.pop h4{text-align:center;margin-bottom:10px;font-size:15px;color:#2d3748}
+.pop-close{display:block;margin:10px auto 0;background:linear-gradient(135deg,#6c5ce7,#5a4bd1);color:#fff;border:none;border-radius:12px;padding:8px 30px;font-size:13px;font-weight:bold;cursor:pointer;box-shadow:0 2px 8px rgba(108,92,231,.3)}
+.cmp{border-color:#f6ad55}
+.cmp h4{color:#ed8936}
+.cmp-sec{background:#f7fafc;border-radius:10px;padding:8px;margin-bottom:6px;border:1px solid #e2e8f0}
+.cmp-lbl{font-size:9px;color:#a0aec0;margin-bottom:3px}
+.cmp-st{font-size:11px;color:#2d3748}
+.cmp-st .nw{color:#48bb78;font-weight:bold}
+.cmp-btns{display:flex;gap:6px;margin-top:8px}
+.cmp-btn{flex:1;padding:6px;border-radius:10px;border:none;font-size:12px;font-weight:bold;cursor:pointer}
+.cmp-k{background:#edf2f7;color:#718096;border:2px solid #e2e8f0}
+.cmp-r{background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;box-shadow:0 2px 6px rgba(238,90,36,.3)}
+.gacha{border-color:#9f7aea}
+.gacha h4{color:#9f7aea}
+.gacha-list{max-height:200px;overflow-y:auto;margin-bottom:8px}
+.gacha-row{display:flex;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:3px;gap:6px;font-size:12px}
+.gacha-row .g-icon{font-size:18px}
+.gacha-row .g-name{flex:1;color:#2d3748;font-weight:bold}
+.gacha-row .g-q{font-size:10px;font-weight:bold}
+.gacha-row .g-cnt{color:#a0aec0;font-size:11px}
+.gq-w{color:#a0aec0}.gq-g{color:#48bb78}.gq-b{color:#4299e1}.gq-p{color:#9f7aea}.gq-o{color:#ed8936}
+.gacha-row.hi{background:#faf5ff;border:1px solid rgba(159,122,234,.3)}
+.settle{border-color:#f6ad55}
+.settle h4{color:#ed8936}
+.settle-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.settle-stat{background:#f7fafc;border-radius:10px;padding:8px;text-align:center;border:1px solid #e2e8f0}
+.settle-stat .sv{font-size:18px;font-weight:bold;color:#f6ad55}
+.settle-stat .sl{font-size:9px;color:#a0aec0;margin-top:2px}
+.settle-rw{background:#f7fafc;border-radius:10px;padding:8px;border:1px solid #e2e8f0}
+.settle-rw h5{color:#ed8936;font-size:11px;margin-bottom:4px}
+.settle-rw div{display:flex;gap:8px;font-size:11px;color:#48bb78;font-weight:bold}
+
+.notes{margin-top:30px}
+.notes h2{font-size:18px;color:#6c5ce7;margin-bottom:16px;border-bottom:2px solid #e2e8f0;padding-bottom:8px}
+.n-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.n-card{background:#fff;border-radius:12px;padding:14px;border:2px solid #e2e8f0;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.n-card h4{color:#6c5ce7;margin-bottom:6px;font-size:13px}
+.n-card p,.n-card li{font-size:11px;color:#718096;line-height:1.5}
+.n-card ul{padding-left:14px}
+.colors{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.sw{width:36px;height:36px;border-radius:8px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.sw span{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:7px;color:#a0aec0;white-space:nowrap}
+</style>
+</head>
+<body>
+<h1>&#x1F3AE; 冒险大作战</h1>
+<p class="sub">移动端2D RPG — UI设计稿 v4 | 卡通休闲风格</p>
+
+<div class="sec"><h2>&#x1F4F1; 登录页面</h2><div class="scrs">
+<div class="ph"><div class="login"><h2>冒险大作战</h2><p>放置类休闲RPG</p><div class="tabs"><div class="tab on">&#x1F4F1; 手机验证码</div><div class="tab">&#x1F4E7; 邮箱验证码</div><div class="tab">&#x1F511; 账号密码</div></div><input class="inp" placeholder="手机号"/><div class="row"><input class="inp" placeholder="验证码"/><button class="code-btn">发送验证码</button></div><button class="big-btn">登 录</button><div class="switch-link">切换到注册</div></div><div class="pl">登录页 — 手机验证码模式</div></div>
+<div class="ph"><div class="login"><h2>冒险大作战</h2><p>放置类休闲RPG</p><div class="tabs"><div class="tab">&#x1F4F1; 手机验证码</div><div class="tab">&#x1F4E7; 邮箱验证码</div><div class="tab on">&#x1F511; 账号密码</div></div><input class="inp" placeholder="手机号 / 邮箱"/><input class="inp" placeholder="密码"/><input class="inp" placeholder="昵称 (可选)"/><button class="big-btn">注 册</button><div class="switch-link">切换到登录</div></div><div class="pl">登录页 — 注册模式</div></div>
+</div></div>
+
+<div class="sec"><h2>&#x1F3E0; 主界面</h2><div class="scrs">
+<div class="ph"><div class="main">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="battle" style="position:relative">
+<div class="stage-name">第二章</div><div class="stage-num">2-5</div>
+<div class="battle-hud"><span class="wave">第 3/5 关</span><span>&#x1F4A5;伤害: 1,240</span><span>&#x23F1;4.2s</span></div>
+<div class="battle-prog"><div class="battle-prog-f" style="width:40%"></div></div>
+<div class="scene" style="flex:1"><div><div class="av av-p" style="border-color:#f56565">&#x1F9D9;</div><div class="hp"><div class="hp-p" style="width:35%;background:linear-gradient(90deg,#fc8181,#f56565)"></div></div><div class="nm" style="color:#e53e3e">&#x26A1;低血量</div></div><div class="vs">&#x2694; VS &#x2694;</div><div><div class="av av-m">&#x1F47A;</div><div class="hp"><div class="hp-m" style="width:55%"></div></div><div class="nm">小妖</div></div></div>
+<div class="sk-slots"><div class="sk-slot sk-innate">&#x1F525;</div><div class="sk-slot sk-equip" style="border-color:#48bb78;box-shadow:0 0 8px rgba(72,187,120,.4)">&#x2744;&#xFE0F;</div><div class="sk-slot sk-equip">&#x26A1;</div><div class="sk-slot sk-empty">+</div><div class="sk-slot sk-empty">+</div></div>
+</div>
+<div class="equip"><div class="equip-title">&#x1F6E1;&#xFE0F; 装备 <span style="color:#cbd5e0;font-size:9px">(新装备自动替换低品质)</span></div><div class="eq-grid"><div class="eq-slot"><div class="eq-n">武器</div><div class="eq-q c-blue">优秀</div></div><div class="eq-slot"><div class="eq-n">头盔</div><div class="eq-q c-green">优良</div></div><div class="eq-slot"><div class="eq-n">铠甲</div><div class="eq-q c-purple">稀有</div></div><div class="eq-slot"><div class="eq-n">鞋子</div><div class="eq-q c-dim">[空]</div></div><div class="eq-slot"><div class="eq-n">戒指1</div><div class="eq-q c-blue">优秀</div></div><div class="eq-slot"><div class="eq-n">戒指2</div><div class="eq-q c-dim">[空]</div></div><div class="eq-slot"><div class="eq-n">项链</div><div class="eq-q c-green">优良</div></div><div class="eq-slot"><div class="eq-n">护腕</div><div class="eq-q c-dim">[空]</div></div><div class="eq-slot"><div class="eq-n">腰带</div><div class="eq-q c-blue">优秀</div></div><div class="eq-slot"><div class="eq-n">手套</div><div class="eq-q c-dim">[空]</div></div></div></div>
+<div class="chest"><div class="chest-info"><span>&#x1F4E6;箱子: 12</span><span>&#x1F4CD;区域Lv.3</span></div><button class="ch-btn ch-open">&#x1F381; 开箱</button><button class="ch-btn ch-up">&#x2B06; 升级 &#x1F4B0;500</button></div>
+<div class="nav"><button class="nav-b on">&#x2694;&#xFE0F;<br>战斗</button><button class="nav-b">&#x1F4D6;<br>技能仓库</button><button class="nav-b">&#x1F3EA;<br>商店</button><button class="nav-b">&#x1F3C6;<br>排行榜</button></div>
+</div><div class="pl">主界面 — 战斗中(3/5关)，4小关+1BOSS，装备/宝箱正常显示</div></div>
+</div></div>
+
+<div class="sec"><h2>&#x1F381; 弹窗</h2><div class="scrs">
+<div class="ph" style="height:500px"><div class="main">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="battle" style="flex:.3;opacity:.3;filter:blur(1px)"><div class="stage-num">2-5</div></div>
+<div class="equip" style="opacity:.3;filter:blur(1px)"></div>
+<div class="chest" style="opacity:.3"></div>
+<div class="pop-ov"><div class="pop cmp"><h4>&#x1F381; 获得装备</h4><div class="cmp-sec"><div class="cmp-lbl">&#x2728; 新装备</div><div class="cmp-st"><span style="color:#4299e1">铠甲 · 稀有</span><br/>ATK:<span class="nw">+12</span> DEF:<span class="nw">+28</span> HP:<span class="nw">+150</span></div></div><div class="cmp-sec"><div class="cmp-lbl">当前装备</div><div class="cmp-st"><span style="color:#48bb78">铠甲 · 优良</span><br/>ATK:+6 DEF:+15 HP:+80</div></div><div class="cmp-btns"><button class="cmp-btn cmp-k">保留原装备</button><button class="cmp-btn cmp-r">替换新装备</button></div></div></div>
+</div><div class="pl">开箱对比弹窗</div></div>
+
+<div class="ph" style="height:500px"><div class="main">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="battle" style="flex:.3;opacity:.3;filter:blur(1px)"><div class="stage-num">2-5</div></div>
+<div class="equip" style="opacity:.3;filter:blur(1px)"></div>
+<div class="chest" style="opacity:.3"></div>
+<div class="pop-ov"><div class="pop settle"><h4>&#x1F3C6; 战斗胜利!</h4><div class="settle-stats"><div class="settle-stat"><div class="sv">3.2s</div><div class="sl">通关时间</div></div><div class="settle-stat"><div class="sv">4,520</div><div class="sl">总伤害</div></div><div class="settle-stat"><div class="sv">1</div><div class="sl">受到伤害</div></div><div class="settle-stat"><div class="sv">3</div><div class="sl">使用技能</div></div></div><div class="settle-rw"><h5>&#x1F381; 奖励</h5><div><span>&#x1F4B0; +120 金币</span><span>&#x2728; +35 经验</span></div></div><button class="pop-close">继 续</button></div></div>
+</div><div class="pl">战斗结算弹窗</div></div>
+
+<div class="ph" style="height:500px"><div class="main">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="shop" style="flex:1">
+<div class="shop-grid" style="opacity:.3;filter:blur(1px);padding:4px"><div class="shop-card"><div class="si">&#x1F0CF;</div></div></div>
+<div class="pop-ov"><div class="pop gacha"><h4>&#x1F0CF; 抽取结果</h4><div class="gacha-list">
+<div class="gacha-row hi"><span class="g-icon">&#x26A1;</span><span class="g-name">雷击</span><span class="g-q gq-p">[史诗]</span><span class="g-cnt">x1</span></div>
+<div class="gacha-row"><span class="g-icon">&#x2744;&#xFE0F;</span><span class="g-name">冰冻</span><span class="g-q gq-b">[稀有]</span><span class="g-cnt">x2</span></div>
+<div class="gacha-row"><span class="g-icon">&#x1F4A8;</span><span class="g-name">疾风</span><span class="g-q gq-b">[稀有]</span><span class="g-cnt">x1</span></div>
+<div class="gacha-row"><span class="g-icon">&#x1F6E1;&#xFE0F;</span><span class="g-name">护盾</span><span class="g-q gq-g">[优良]</span><span class="g-cnt">x3</span></div>
+<div class="gacha-row"><span class="g-icon">&#x1F525;</span><span class="g-name">火球</span><span class="g-q gq-g">[优良]</span><span class="g-cnt">x2</span></div>
+<div class="gacha-row"><span class="g-icon">&#x1F5E1;&#xFE0F;</span><span class="g-name">斩击</span><span class="g-q gq-w">[普通]</span><span class="g-cnt">x1</span></div>
+</div><button class="pop-close">确 认</button></div></div>
+</div></div><div class="pl">抽卡结果弹窗</div></div>
+</div></div>
+
+<div class="sec"><h2>&#x1F4D6; 技能仓库</h2><div class="scrs">
+<div class="ph"><div class="sk-panel">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="sk-bar"><div class="sk-eq sk-eq-in"><span>&#x1F525;</span><span>固有</span></div><div class="sk-eq sk-eq-fill"><span>&#x2744;&#xFE0F;</span><span>冰冻</span></div><div class="sk-eq sk-eq-fill" style="border-color:#9f7aea"><span>&#x26A1;</span><span>雷击</span></div><div class="sk-eq sk-eq-empty"><span>+</span><span>空槽</span></div><div class="sk-eq sk-eq-empty"><span>+</span><span>空槽</span></div></div>
+<div class="sk-hdr"><span>技能列表 (8)</span><button class="up-btn">&#x2B06; 统一升级</button></div>
+<div class="sk-scroll"><div class="sk-grid"><div class="sk-card b-purple"><div class="i">&#x26A1;</div><div class="n">雷击</div><div class="l">Lv.3</div></div><div class="sk-card b-blue"><div class="i">&#x2744;&#xFE0F;</div><div class="n">冰冻</div><div class="l">Lv.2</div></div><div class="sk-card b-orange"><div class="i">&#x1F31F;</div><div class="n">圣光</div><div class="l">Lv.1</div></div><div class="sk-card b-blue"><div class="i">&#x1F4A8;</div><div class="n">疾风</div><div class="l">Lv.2</div></div><div class="sk-card b-green"><div class="i">&#x1F6E1;&#xFE0F;</div><div class="n">护盾</div><div class="l">Lv.4</div></div><div class="sk-card b-green"><div class="i">&#x1F525;</div><div class="n">火球</div><div class="l">Lv.3</div></div><div class="sk-card"><div class="i">&#x1F5E1;&#xFE0F;</div><div class="n">斩击</div><div class="l">Lv.1</div></div><div class="sk-card"><div class="i">&#x1FA79;</div><div class="n">治愈</div><div class="l">Lv.2</div></div></div></div>
+<div class="nav"><button class="nav-b">&#x2694;&#xFE0F;<br>战斗</button><button class="nav-b on">&#x1F4D6;<br>技能仓库</button><button class="nav-b">&#x1F3EA;<br>商店</button><button class="nav-b">&#x1F3C6;<br>排行榜</button></div>
+</div><div class="pl">技能仓库 — HUD置顶</div></div>
+</div></div>
+
+<div class="sec"><h2>&#x1F3EA; 商店</h2><div class="scrs">
+<div class="ph"><div class="shop">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="shop-hdr"><h3>&#x1F3EA; 商店</h3><button class="shop-x">&#x2715;</button></div>
+<div class="shop-grid">
+<div class="shop-card"><div class="si">&#x1F0CF;</div><div class="sn">技能商店</div><div class="s-level">商店Lv.3 | &#x1F3AB;券: 18</div><div class="gacha-btns"><button class="g-btn g1">抽1次</button><button class="g-btn g2">抽10次</button><button class="g-btn g2">抽50次</button><button class="g-btn g2">抽100次</button></div></div>
+<div class="shop-card lock"><div class="si">&#x1F43E;</div><div class="sn">宠物商店</div><div class="s-level" style="color:#cbd5e0">即将开放</div><div class="lt">&#x1F512; 敬请期待</div></div>
+<div class="shop-card lock"><div class="si">&#x2728;</div><div class="sn">待扩展</div><div class="lt">&#x1F512; 敬请期待</div></div>
+<div class="shop-card lock"><div class="si">&#x1F381;</div><div class="sn">待扩展</div><div class="lt">&#x1F512; 敬请期待</div></div>
+</div>
+<div class="nav"><button class="nav-b">&#x2694;&#xFE0F;<br>战斗</button><button class="nav-b">&#x1F4D6;<br>技能仓库</button><button class="nav-b on">&#x1F3EA;<br>商店</button><button class="nav-b">&#x1F3C6;<br>排行榜</button></div>
+</div><div class="pl">商店 — 每个商店独立等级，宠物商店替代装备商店</div></div>
+</div></div>
+
+<div class="sec"><h2>&#x1F3C6; 排行榜</h2><div class="scrs">
+<div class="ph"><div class="main">
+<div class="hud"><span class="lv">Lv.15</span><div class="xp"><div class="xp-f"></div></div><div class="res"><span class="gold">&#x1F4B0;2,340</span><span class="ticket">&#x1F3AB;18</span><span class="cp">&#x2694;1,250</span></div></div>
+<div class="lb">
+<div class="lb-bg"></div>
+<div class="lb-panel">
+<div class="lb-hdr"><h3>&#x1F3C6; 排行榜</h3><button class="lb-col">&#x25C0; 收起</button></div>
+<div class="lb-list">
+<div class="lb-row me"><div class="lb-r">&#x2B50;42</div><div class="lb-n">&#x1F9D9; 我的角色</div><div class="lb-l">Lv.15</div><div class="lb-c">1,250</div></div>
+<div class="lb-row"><div class="lb-r r1">&#x1F947;1</div><div class="lb-n">龙骑士</div><div class="lb-l">Lv.28</div><div class="lb-c">5,800</div></div>
+<div class="lb-row"><div class="lb-r r2">&#x1F948;2</div><div class="lb-n">暗影刺客</div><div class="lb-l">Lv.26</div><div class="lb-c">5,200</div></div>
+<div class="lb-row"><div class="lb-r r3">&#x1F949;3</div><div class="lb-n">圣光法师</div><div class="lb-l">Lv.25</div><div class="lb-c">4,900</div></div>
+<div class="lb-row"><div class="lb-r">4</div><div class="lb-n">风暴射手</div><div class="lb-l">Lv.24</div><div class="lb-c">4,600</div></div>
+<div class="lb-row"><div class="lb-r">5</div><div class="lb-n">大地守卫</div><div class="lb-l">Lv.23</div><div class="lb-c">4,300</div></div>
+<div class="lb-row"><div class="lb-r">6</div><div class="lb-n">冰霜女巫</div><div class="lb-l">Lv.22</div><div class="lb-c">4,100</div></div>
+<div class="lb-row"><div class="lb-r">7</div><div class="lb-n">烈焰战士</div><div class="lb-l">Lv.21</div><div class="lb-c">3,900</div></div>
+</div><div class="lb-more">加载更多...</div>
+</div></div></div></div><div class="pl">排行榜 — HUD置顶，全局排名</div></div>
+</div></div>
+
+<div class="notes"><h2>&#x1F4DD; 设计说明 v4</h2><div class="n-grid">
+<div class="n-card"><h4>&#x1F3A8; 卡通休闲风格</h4><p>明亮色彩 + 大圆角 + 渐变色</p><div class="colors"><div class="sw" style="background:#f7fafc"><span>主背景</span></div><div class="sw" style="background:#fff"><span>面板</span></div><div class="sw" style="background:#6c5ce7"><span>紫色</span></div><div class="sw" style="background:#ff6b6b"><span>红色</span></div><div class="sw" style="background:#f6ad55"><span>金色</span></div><div class="sw" style="background:#4299e1"><span>蓝色</span></div><div class="sw" style="background:#48bb78"><span>绿色</span></div></div></div>
+<div class="n-card"><h4>&#x1F4F1; 移动端</h4><ul><li>全锚点布局，无硬编码像素</li><li>底部导航固定，单手操作</li><li>触控区域 ≥44px</li><li>圆角12-16px</li><li>竖屏优先</li></ul></div>
+<div class="n-card"><h4>&#x1F504; 交互</h4><ul><li>4个Tab: 战斗/技能/商店/排行</li><li>自动战斗，装备不可卸下</li><li>章节随进度自动推进</li><li>每个商店独立等级</li></ul></div>
+<div class="n-card"><h4>&#x1F195; v4 改动</h4><ul><li>暗色RPG → 卡通休闲风格</li><li>战斗在主界面战斗区内，4小关+1BOSS</li><li>HUD含技能券，所有界面置顶</li><li>商店等级独立，宠物商店替代装备商店</li></ul></div>
+<div class="n-card"><h4>&#x2728; 品质颜色</h4><div class="colors"><div class="sw" style="background:#a0aec0"><span>普通</span></div><div class="sw" style="background:#48bb78"><span>优良</span></div><div class="sw" style="background:#4299e1"><span>稀有</span></div><div class="sw" style="background:#9f7aea"><span>史诗</span></div><div class="sw" style="background:#ed8936"><span>传说</span></div><div class="sw" style="background:#f56565"><span>神话</span></div><div class="sw" style="background:#ecc94b"><span>神祼</span></div></div></div>
+<div class="n-card"><h4>&#x1F5D2; 全部UI</h4><ul><li>登录页</li><li>主界面(待战/战斗中)</li><li>开箱对比弹窗</li><li>战斗结算弹窗</li><li>技能仓库面板</li><li>商店面板(独立等级)</li><li>抽卡结果弹窗</li><li>排行榜侧滑</li></ul></div>
+</div></div>
+</body></html>

@@ -1,86 +1,120 @@
-[gd_scene load_steps=2 format=3 uid="uid://login_main"]
+﻿[gd_scene load_steps=2 format=3 uid="uid://login_scene_v4"]
 
 [ext_resource type="Script" path="res://scenes/login/login_ui.gd" id="1_login_ui"]
 
-[node name="root" type="Control"]
+[node name="Login" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1_login_ui")
 
+[node name="GradientBg" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.78, 0.9, 0.82, 1)
+
 [node name="VBox" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -200.0
-offset_right = 150.0
-offset_bottom = 200.0
+anchors_preset = -1
+anchor_left = 0.1
+anchor_top = 0.08
+anchor_right = 0.9
+anchor_bottom = 0.88
+theme_override_constants/separation = 8
 
-[node name="TabPhone" type="Button" parent="VBox"]
+[node name="TitleLabel" type="Label" parent="VBox"]
 layout_mode = 2
+text = "冒险大作战"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+[node name="SubtitleLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = "放置类休闲RPG"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 14
+
+[node name="TabHBox" type="HBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="TabPhone" type="Button" parent="VBox/TabHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "手机验证码"
 
-[node name="TabEmail" type="Button" parent="VBox"]
+[node name="TabEmail" type="Button" parent="VBox/TabHBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "邮箱验证码"
 
-[node name="TabAccount" type="Button" parent="VBox"]
+[node name="TabAccount" type="Button" parent="VBox/TabHBox"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "账号密码"
 
 [node name="PhoneInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
 placeholder_text = "手机号"
+custom_minimum_size = Vector2(0, 44)
 
 [node name="EmailInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
 placeholder_text = "邮箱"
 visible = false
+custom_minimum_size = Vector2(0, 44)
 
 [node name="AccountInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
 placeholder_text = "手机号 / 邮箱"
 visible = false
+custom_minimum_size = Vector2(0, 44)
 
 [node name="NicknameInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
 placeholder_text = "昵称"
 visible = false
+custom_minimum_size = Vector2(0, 44)
 
-[node name="CodeInput" type="LineEdit" parent="VBox"]
+[node name="CodeRow" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CodeInput" type="LineEdit" parent="VBox/CodeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 placeholder_text = "验证码"
+custom_minimum_size = Vector2(0, 44)
 
-[node name="SendCodeBtn" type="Button" parent="VBox"]
+[node name="SendCodeBtn" type="Button" parent="VBox/CodeRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(100, 44)
 text = "发送验证码"
 
 [node name="PasswordInput" type="LineEdit" parent="VBox"]
 layout_mode = 2
 placeholder_text = "密码"
 secret = true
+custom_minimum_size = Vector2(0, 44)
 
 [node name="LoginBtn" type="Button" parent="VBox"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 48)
 text = "登录"
 
 [node name="RegisterBtn" type="Button" parent="VBox"]
 layout_mode = 2
-text = "注册"
+text = "切换到注册"
 
 [node name="StatusLabel" type="Label" parent="."]
 layout_mode = 1
-anchors_preset = 10
-anchor_left = 0.5
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -150.0
-offset_bottom = -50.0
-offset_right = 150.0
+anchors_preset = -1
+anchor_left = 0.1
+anchor_right = 0.9
+anchor_bottom = 0.94
+offset_top = -20.0
 text = ""
 horizontal_alignment = 1

@@ -1,10 +1,13 @@
+﻿# NetworkManager - HTTP + WebSocket communication
+class_name NetworkManager
 extends Node
 
-const BASE_URL = "http://localhost:8080"
-const WS_URL = "ws://localhost:8080/ws/battle"
+const BASE_URL: String = "http://localhost:8080"
+const WS_URL: String = "ws://localhost:8080/ws/battle"
 
 var access_token: String = ""
 var refresh_token: String = ""
+
 var _ws: WebSocketPeer
 var _ws_connected: bool = false
 
@@ -13,74 +16,98 @@ signal ws_message_received(type: String, payload: Dictionary)
 signal ws_connected
 signal ws_disconnected
 signal auto_login_success
-signal login_success
 
-func _ready():
+func _ready() -> void:
 	_load_tokens()
 	_try_auto_login()
 
-func _process(_delta):
-	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
+func _process(_delta: float) -> void:
+	if _ws == null:
+		return
+	var state := _ws.get_ready_state()
+	if state == WebSocketPeer.STATE_OPEN:
 		if not _ws_connected:
 			_ws_connected = true
 			ws_connected.emit()
+			Log.info("Network", "WebSocket connected")
 		_ws.poll()
 		while _ws.get_available_packet_count() > 0:
-			var packet = _ws.get_packet()
-			var text = packet.get_string_from_utf8()
-			var json = JSON.parse_string(text)
-			if json:
+			var packet := _ws.get_packet()
+			var text := packet.get_string_from_utf8()
+			var json: Variant = JSON.parse_string(text)
+			if json and json is Dictionary:
 				ws_message_received.emit(json.get("type", ""), json.get("payload", {}))
-	elif _ws and _ws.get_ready_state() == WebSocketPeer.STATE_CLOSED:
-		_ws_connected = false
-		ws_disconnected.emit()
+	elif state == WebSocketPeer.STATE_CLOSED:
+		if _ws_connected:
+			_ws_connected = false
+			ws_disconnected.emit()
+			Log.warn("Network", "WebSocket disconnected")
 
-func _try_auto_login():
-	if refresh_token:
-		var ok = await _silent_refresh()
-		if ok:
-			auto_login_success.emit()
+# ── Auth ──────────────────────────────────────────────
+
+func _try_auto_login() -> void:
+	if refresh_token == "":
+		Log.info("Network", "No refresh token, skip auto-login")
+		return
+	Log.info("Network", "Attempting auto-login with refresh token")
+	var ok: bool = await _silent_refresh()
+	if ok:
+		Log.info("Network", "Auto-login success")
+		auto_login_success.emit()
+	else:
+		Log.warn("Network", "Auto-login failed")
 
 func _silent_refresh() -> bool:
-	var http = HTTPRequest.new()
+	var http := HTTPRequest.new()
 	add_child(http)
 	http.request(BASE_URL + "/api/auth/refresh", ["Content-Type: application/json"], HTTPClient.METHOD_POST,
 		JSON.stringify({"refresh_token": refresh_token}))
-	var result = await http.request_completed
+	var result: Array = await http.request_completed
 	http.queue_free()
-
-	var json = JSON.parse_string(result[3].get_string_from_utf8())
-	if json and json.code == 0:
+	var response_code: int = result[1]
+	if response_code != 200:
+		Log.warn("Network", "Silent refresh failed", {"status": response_code})
+		return false
+	var json: Variant = JSON.parse_string(result[3].get_string_from_utf8())
+	if json and json is Dictionary and json.code == 0:
 		access_token = json.data.access_token
 		refresh_token = json.data.refresh_token
 		_save_tokens()
 		return true
+	Log.warn("Network", "Silent refresh response invalid")
 	return false
 
-func _load_tokens():
-	var f = FileAccess.open("user://tokens.dat", FileAccess.READ)
+func _load_tokens() -> void:
+	var f := FileAccess.open("user://tokens.dat", FileAccess.READ)
 	if f:
-		var data = JSON.parse_string(f.get_as_text())
-		if data:
+		var data: Variant = JSON.parse_string(f.get_as_text())
+		if data and data is Dictionary:
 			access_token = data.get("access", "")
 			refresh_token = data.get("refresh", "")
 		f.close()
+		Log.info("Network", "Tokens loaded from disk")
 
-func _save_tokens():
-	var f = FileAccess.open("user://tokens.dat", FileAccess.WRITE)
+func _save_tokens() -> void:
+	var f := FileAccess.open("user://tokens.dat", FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({"access": access_token, "refresh": refresh_token}))
 		f.close()
 
-func save_tokens(p_access: String, p_refresh: String):
+func save_tokens(p_access: String, p_refresh: String) -> void:
 	access_token = p_access
 	refresh_token = p_refresh
 	_save_tokens()
+	Log.info("Network", "Tokens saved")
+
+func clear_tokens() -> void:
+	access_token = ""
+	refresh_token = ""
+	_save_tokens()
+	Log.info("Network", "Tokens cleared")
+
+# ── HTTP Request ──────────────────────────────────────
 
 func request(method: String, path: String, body: Dictionary = {}) -> Dictionary:
-	var http = HTTPRequest.new()
-	add_child(http)
-
 	var http_method: HTTPClient.Method
 	match method:
 		"GET": http_method = HTTPClient.METHOD_GET
@@ -89,105 +116,79 @@ func request(method: String, path: String, body: Dictionary = {}) -> Dictionary:
 		"DELETE": http_method = HTTPClient.METHOD_DELETE
 		_: http_method = HTTPClient.METHOD_GET
 
-	var headers = [
-		"Content-Type: application/json"
-	]
-	if access_token:
+	var headers: PackedStringArray = ["Content-Type: application/json"]
+	if access_token != "":
 		headers.append("Authorization: Bearer " + access_token)
 
-	var err = http.request(BASE_URL + path, headers, http_method, JSON.stringify(body))
+	Log.debug("Network", ">> Request", {"method": method, "path": path, "has_body": not body.is_empty()})
+
+	var http := HTTPRequest.new()
+	add_child(http)
+	var err: int = http.request(BASE_URL + path, headers, http_method, JSON.stringify(body))
 	if err != OK:
 		http.queue_free()
+		Log.error("Network", "Request creation failed", {"error": err, "method": method, "path": path})
 		return {"code": -1, "msg": "request failed"}
 
-	var result = await http.request_completed
+	var result: Array = await http.request_completed
 	http.queue_free()
 
-	var response_code = result[1]
-	var response_body = result[3].get_string_from_utf8()
+	var response_code: int = result[1]
+	var response_body: String = result[3].get_string_from_utf8()
+
+	Log.debug("Network", "<< Response", {"method": method, "path": path, "status": response_code})
 
 	if response_code == 401 and path != "/api/auth/refresh":
+		Log.info("Network", "Token expired, refreshing...", {"path": path})
 		await _refresh_token()
 		return await request(method, path, body)
 
-	var json = JSON.parse_string(response_body)
-	if json:
+	var json: Variant = JSON.parse_string(response_body)
+	if json and json is Dictionary:
 		return json
+	Log.error("Network", "JSON parse error", {"path": path, "status": response_code})
 	return {"code": -1, "msg": "parse error"}
 
-func _refresh_token():
-	var http = HTTPRequest.new()
+func _refresh_token() -> void:
+	var http := HTTPRequest.new()
 	add_child(http)
 	http.request(BASE_URL + "/api/auth/refresh", ["Content-Type: application/json"], HTTPClient.METHOD_POST,
 		JSON.stringify({"refresh_token": refresh_token}))
-	var result = await http.request_completed
+	var result: Array = await http.request_completed
 	http.queue_free()
-
-	var json = JSON.parse_string(result[3].get_string_from_utf8())
-	if json and json.code == 0:
+	var json: Variant = JSON.parse_string(result[3].get_string_from_utf8())
+	if json and json is Dictionary and json.code == 0:
 		access_token = json.data.access_token
 		refresh_token = json.data.refresh_token
 		_save_tokens()
+		Log.info("Network", "Token refreshed")
 	else:
+		Log.warn("Network", "Token refresh failed")
 		token_expired.emit()
 
-func connect_ws():
-	_ws = WebSocketPeer.new()
-	var url = WS_URL + "?token=" + access_token
-	_ws.connect_to_url(url)
+# ── WebSocket ─────────────────────────────────────────
 
-func disconnect_ws():
-	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
-		if not _ws_connected:
-			_ws_connected = true
-			ws_connected.emit()
+func connect_ws() -> void:
+	if _ws != null:
+		disconnect_ws()
+	_ws = WebSocketPeer.new()
+	var url: String = WS_URL + "?token=" + access_token
+	_ws.connect_to_url(url)
+	Log.info("Network", "Connecting WebSocket", {"url": WS_URL})
+
+func disconnect_ws() -> void:
+	if _ws == null:
+		return
+	if _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
 		_ws.close()
 	_ws_connected = false
+	_ws = null
+	Log.info("Network", "WebSocket disconnected")
 
-func send_ws_message(type: String, payload: Dictionary):
-	if _ws and _ws.get_ready_state() == WebSocketPeer.STATE_OPEN:
-		if not _ws_connected:
-			_ws_connected = true
-			ws_connected.emit()
-		var msg = JSON.stringify({"type": type, "payload": payload})
-		_ws.send_text(msg)
-
-func register(phone: String, password: String, code: String, nickname: String) -> Dictionary:
-	var body = {
-		"phone": phone,
-		"password": password,
-		"code": code,
-		"nickname": nickname
-	}
-	return await request("POST", "/api/auth/register", body)
-
-func login(account: String, password: String) -> Dictionary:
-	var body = {
-		"account": account,
-		"password": password
-	}
-	return await request("POST", "/api/auth/login", body)
-
-func gacha_skill(count: int) -> Dictionary:
-	return await request("POST", "/api/skill/gacha", {"count": count})
-
-func equip_item(item_uid: String, slot: String) -> Dictionary:
-	return await request("POST", "/api/equipment/equip", {"item_uid": item_uid, "slot": slot})
-
-func decompose_equipment(item_uids: Array) -> Dictionary:
-	return await request("POST", "/api/equipment/decompose", {"item_uids": item_uids})
-
-func open_chest(count: int) -> Dictionary:
-	return await request("POST", "/api/chest/open", {"count": count})
-
-func get_leaderboard(page: int, size: int) -> Dictionary:
-	return await request("GET", "/api/leaderboard?page=" + str(page) + "&size=" + str(size))
-
-func clear_tokens():
-	access_token = ""
-	refresh_token = ""
-	_save_tokens()
-
-func _suppress_unused_signal_warnings():
-	if false:
-		login_success.emit()
+func send_ws_message(type: String, payload: Dictionary) -> void:
+	if _ws == null or _ws.get_ready_state() != WebSocketPeer.STATE_OPEN:
+		Log.warn("Network", "Cannot send WS message, not connected", {"type": type})
+		return
+	var msg: String = JSON.stringify({"type": type, "payload": payload})
+	_ws.send_text(msg)
+	Log.debug("Network", "WS >> Message sent", {"type": type})
