@@ -1,5 +1,4 @@
-﻿# EventBus - Centralized signal bus for decoupled communication
-class_name EventBus
+# EventBus - Centralized signal bus for decoupled communication
 extends Node
 
 # Auth

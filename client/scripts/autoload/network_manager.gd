@@ -1,5 +1,4 @@
-﻿# NetworkManager - HTTP + WebSocket communication
-class_name NetworkManager
+# NetworkManager - HTTP + WebSocket communication
 extends Node
 
 const BASE_URL: String = "http://localhost:8080"

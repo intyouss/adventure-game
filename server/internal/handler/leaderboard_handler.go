@@ -45,12 +45,14 @@ func (h *LeaderboardHandler) GetTop(c *gin.Context) {
 	})
 }
 
-// GetMyRank handles GET /api/leaderboard/my_rank
+// GetMyRank handles GET /api/leaderboard/my_rank?chapter=0
 func (h *LeaderboardHandler) GetMyRank(c *gin.Context) {
 	charID := c.GetInt64("character_id")
+	chapterStr := c.DefaultQuery("chapter", "0")
+	chapter, _ := strconv.Atoi(chapterStr)
 
-	logger.Info(c, "[GET_MY_RANK]")
-	entry, err := h.svc.GetRank(c.Request.Context(), charID)
+	logger.Info(c, "[GET_MY_RANK]", "chapter", chapter)
+	entry, err := h.svc.GetRank(c.Request.Context(), charID, chapter)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, errcode.ErrInternal, err.Error())
 		return

@@ -1,4 +1,4 @@
-﻿# Log - Structured logging system with context-rich formatting
+# Log - Structured logging system with context-rich formatting
 # Usage: Log.info("Network", "Request completed", {"path": "/api/character", "status": 200})
 extends Node
 

@@ -1,4 +1,4 @@
-﻿# BattleSimulator - Client-side battle simulation engine
+# BattleSimulator - Client-side battle simulation engine
 class_name BattleSimulator
 extends Node
 
@@ -29,6 +29,10 @@ class BattleSummary:
 	var skills_used: Array = []
 	var skill_cast_counts: Dictionary = {}
 	var player_stats: Dictionary = {}
+	var hp_before: float = 0.0
+	var hp_after: float = 0.0
+	var boss_defeated: bool = false
+	var monster_kills: int = 0
 
 	func to_dict() -> Dictionary:
 		return {
@@ -40,6 +44,10 @@ class BattleSummary:
 			"skills_used": skills_used,
 			"skill_cast_counts": skill_cast_counts,
 			"player_stats": player_stats,
+			"hp_before": hp_before,
+			"hp_after": hp_after,
+			"boss_defeated": boss_defeated,
+			"monster_kills": monster_kills,
 		}
 
 var player: BattleUnit
@@ -63,6 +71,10 @@ func start_battle(stage_config: Dictionary, player_stats: Dictionary) -> void:
 	summary.player_stats = player_stats
 	summary.skills_used = []
 	summary.skill_cast_counts = {}
+	summary.hp_before = player.hp
+	summary.hp_after = player.hp
+	summary.boss_defeated = false
+	summary.monster_kills = 0
 	current_wave = 0
 	elapsed_time = 0.0
 	_elapsed_player_attack = 0.0
@@ -149,9 +161,13 @@ func tick(delta: float) -> void:
 
 	# Check wave cleared
 	if _wave_cleared(wave):
+		var kills: int = wave.monsters.size()
+		summary.monster_kills += kills
+		if wave.is_boss:
+			summary.boss_defeated = true
 		summary.waves.append({
 			"wave": current_wave + 1,
-			"kills": wave.monsters.size(),
+			"kills": kills,
 			"damage": wave_damage,
 			"damage_taken": wave_damage_taken,
 			"is_boss": wave.is_boss,
@@ -227,6 +243,7 @@ func _wave_cleared(wave: WaveData) -> bool:
 
 func _finish_battle() -> void:
 	summary.clear_time_ms = int(elapsed_time * 1000)
+	summary.hp_after = max(player.hp, 0.0)
 	Log.info("BattleSimulator", "Battle finished", {
 		"stage_id": summary.stage_id,
 		"clear_time_ms": summary.clear_time_ms,

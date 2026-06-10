@@ -1,4 +1,4 @@
-﻿# CharacterModel - Player character data model
+# CharacterModel - Player character data model
 class_name CharacterModel
 extends RefCounted
 

@@ -1,4 +1,4 @@
-﻿# SkillModel - Skill data model with 5-tier quality
+# SkillModel - Skill data model with 5-tier quality
 class_name SkillModel
 extends RefCounted
 

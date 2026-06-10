@@ -1,13 +1,13 @@
-﻿package model
+package model
 
 import "fmt"
 
 // StageConfig defines a single level's configuration.
 type StageConfig struct {
-	StageID string        `json:"stage_id"`
-	Chapter int           `json:"chapter"`
-	Level   int           `json:"level"`
-	Waves   []WaveConfig  `json:"waves"`
+	StageID string       `json:"stage_id"`
+	Chapter int          `json:"chapter"`
+	Level   int          `json:"level"`
+	Waves   []WaveConfig `json:"waves"`
 }
 
 // WaveConfig defines a wave of monsters.
@@ -35,8 +35,8 @@ type StageRewards struct {
 func GenerateStageConfig(chapter, level int) StageConfig {
 	stageID := fmt.Sprintf("%d-%d", chapter, level)
 	baseHP := 30 + (chapter-1)*20 + (level-1)*5
-	baseATK := 5 + (chapter-1)*3 + (level-1)
-	baseDEF := 2 + (chapter-1)*2 + (level-1)
+	baseATK := 5 + (chapter-1)*3 + (level - 1)
+	baseDEF := 2 + (chapter-1)*2 + (level - 1)
 
 	var waves []WaveConfig
 	for i := 0; i < 5; i++ {
@@ -64,6 +64,7 @@ func GenerateStageConfig(chapter, level int) StageConfig {
 }
 
 // CalculateRewards computes rewards for clearing a stage.
+// No gold reward — gold only comes from decomposing equipment.
 func CalculateRewards(chapter, level int) StageRewards {
 	baseTickets := int64(1)
 	chests := 2
