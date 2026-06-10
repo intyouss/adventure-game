@@ -1,10 +1,9 @@
-﻿# EquipmentModel - Equipment data model with 7-tier quality
+# EquipmentModel - Equipment data model with 7-tier quality
 class_name EquipmentModel
 extends RefCounted
 
 var name: String = ""
 var id: String = ""
-var uid: String = ""
 var slot: String = ""
 var quality: int = 1
 var atk: int = 0
@@ -37,7 +36,6 @@ const SLOT_NAMES: Dictionary = {
 func from_dict(d: Dictionary) -> EquipmentModel:
 	name = d.get("name", "")
 	id = d.get("id", "")
-	uid = d.get("uid", d.get("id", ""))
 	slot = d.get("slot", "")
 	quality = d.get("quality", 1)
 	atk = d.get("atk", 0)

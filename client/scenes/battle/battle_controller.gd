@@ -1,4 +1,4 @@
-﻿# BattleController - Standalone battle scene (kept for reference/testing)
+# BattleController - Standalone battle scene (kept for reference/testing)
 # Battle is now integrated into BattleArea on main screen
 class_name BattleController
 extends Node
@@ -76,9 +76,10 @@ func _on_plan_b(result: Dictionary) -> void:
 
 func _on_settled(data: Dictionary) -> void:
 	Log.info("BattleController", "Battle settled", {"rewards": data.get("rewards", {})})
-	PlayerState.update_from_server(data)
 	if data.has("rewards"):
 		EventBus.reward_received.emit(data.rewards)
+	await PlayerState.load_all()
+	EventBus.inventory_changed.emit()
 	battle_completed.emit(data.get("summary", {}))
 
 func _on_error(payload: Dictionary) -> void:

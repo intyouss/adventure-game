@@ -1,4 +1,4 @@
-﻿[gd_scene load_steps=10 format=3 uid="uid://main_scene_v4"]
+[gd_scene load_steps=10 format=3 uid="uid://main_scene_v4"]
 
 [ext_resource type="Script" path="res://scenes/main/main_ui.gd" id="1_main_ui"]
 [ext_resource type="Script" path="res://scenes/main/bottom_button_row.gd" id="2_bottom_nav"]
@@ -54,486 +54,250 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1_main_ui")
 
-[node name="HUD" type="Control" parent="."]
+[node name="HUD" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 52.0
+offset_bottom = 44.0
+theme_override_constants/separation = 6
 
-[node name="LevelLabel" type="Label" parent="HUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 8.0
-offset_top = 10.0
-offset_right = 72.0
-offset_bottom = 34.0
+[node name="LevelBadge" type="PanelContainer" parent="HUD"]
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="HUD/LevelBadge"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 11
 text = "Lv.1"
 
 [node name="ExpBar" type="ProgressBar" parent="HUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 8)
+offset_top = 16.0
+offset_bottom = 24.0
+
+[node name="ResourceRow" type="HBoxContainer" parent="HUD"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GoldLabel" type="Label" parent="HUD/ResourceRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.965, 0.678, 0.333, 1)
+text = "💰0"
+
+[node name="TicketLabel" type="Label" parent="HUD/ResourceRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.424, 0.361, 0.906, 1)
+text = "🎟0"
+
+[node name="CPLabel" type="Label" parent="HUD/ResourceRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.898, 0.243, 0.243, 1)
+text = "⚔0"
+
+[node name="ContentArea" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.18
-anchor_top = 0.19
-anchor_right = 0.55
-anchor_bottom = 0.65
-
-[node name="GoldLabel" type="Label" parent="HUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.57
-anchor_top = 0.0
-anchor_right = 0.72
-anchor_bottom = 0.65
-offset_top = 10.0
-text = "💰 0"
-
-[node name="TicketLabel" type="Label" parent="HUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.73
-anchor_top = 0.0
-anchor_right = 0.87
-anchor_bottom = 0.65
-offset_top = 10.0
-text = "🎟 0"
-
-[node name="CPLabel" type="Label" parent="HUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.88
-anchor_top = 0.0
-anchor_right = 1.0
-anchor_bottom = 0.65
-offset_top = 10.0
-offset_right = -4.0
-text = "⚔ CP 0"
-
-[node name="ContentArea" type="Control" parent="."]
-layout_mode = 1
-anchors_preset = -1
-anchor_top = 52.0
-anchor_bottom = 56.0
-anchor_right = 1.0
-
-[node name="BattleArea" type="Control" parent="ContentArea"]
-layout_mode = 1
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_bottom = -136.0
+offset_top = 44.0
+offset_bottom = -56.0
+horizontal_scroll_mode = 0
+
+[node name="ContentVBox" type="VBoxContainer" parent="ContentArea"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="BattleArea" type="VBoxContainer" parent="ContentArea/ContentVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 2
 script = ExtResource("3_battle_area")
 
-[node name="StageName" type="Label" parent="ContentArea/BattleArea"]
-layout_mode = 1
-anchors_preset = 10
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -80.0
-offset_top = 2.0
-offset_right = 80.0
-offset_bottom = 24.0
+[node name="StageName" type="Label" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
 horizontal_alignment = 1
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.443, 0.502, 0.588, 1)
+text = "第一章"
+
+[node name="StageNum" type="Label" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.176, 0.216, 0.282, 1)
 text = "1-1"
 
-[node name="BattleScene" type="Control" parent="ContentArea/BattleArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.05
-anchor_top = 0.14
-anchor_right = 0.95
-anchor_bottom = 0.65
+[node name="BattleHUD" type="HBoxContainer" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+visible = false
+theme_override_constants/separation = 4
 
-[node name="BattleHUD" type="Control" parent="ContentArea/BattleArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.05
-anchor_top = 0.66
-anchor_right = 0.95
-anchor_bottom = 0.74
-
-[node name="ProgressBar" type="ProgressBar" parent="ContentArea/BattleArea/BattleHUD"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-
-[node name="WaveLabel" type="Label" parent="ContentArea/BattleArea/BattleHUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.0
-offset_left = 4.0
-offset_top = -16.0
-offset_right = 120.0
+[node name="WaveLabel" type="Label" parent="ContentArea/ContentVBox/BattleArea/BattleHUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.176, 0.216, 0.282, 1)
 text = "准备战斗"
 
-[node name="DamageLabel" type="Label" parent="ContentArea/BattleArea/BattleHUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.35
-offset_left = 4.0
-offset_top = -16.0
-offset_right = 160.0
-text = "伤害: 0"
+[node name="DamageLabel" type="Label" parent="ContentArea/ContentVBox/BattleArea/BattleHUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "💥伤害: 0"
 
-[node name="TimeLabel" type="Label" parent="ContentArea/BattleArea/BattleHUD"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.7
-offset_left = 4.0
-offset_top = -16.0
-offset_right = 120.0
-text = "0.0s"
+[node name="TimeLabel" type="Label" parent="ContentArea/ContentVBox/BattleArea/BattleHUD"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+text = "⏱0.0s"
 
-[node name="SkillSlots" type="HBoxContainer" parent="ContentArea/BattleArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.15
-anchor_top = 0.78
-anchor_right = 0.85
-anchor_bottom = 0.98
+[node name="BattleProg" type="ProgressBar" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+visible = false
+custom_minimum_size = Vector2(0, 5)
+
+[node name="WaveIndicators" type="HBoxContainer" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="BattleScene" type="Control" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 120)
+
+[node name="SkillSlots" type="HBoxContainer" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 5
+
+[node name="StartBtn" type="Button" parent="ContentArea/ContentVBox/BattleArea"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 40)
+text = "⚔️ 开始战斗"
+
+[node name="EquipmentArea" type="VBoxContainer" parent="ContentArea/ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+script = ExtResource("4_equipment_area")
+
+[node name="EquipTitle" type="Label" parent="ContentArea/ContentVBox/EquipmentArea"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+theme_override_colors/font_color = Color(0.443, 0.502, 0.588, 1)
+text = "🛡️ 装备  (新装备自动替换低品质)"
+
+[node name="SlotGrid" type="GridContainer" parent="ContentArea/ContentVBox/EquipmentArea"]
+layout_mode = 2
+columns = 5
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+
+[node name="ChestArea" type="HBoxContainer" parent="ContentArea/ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+script = ExtResource("5_chest_area")
+
+[node name="ChestIcon" type="Label" parent="ContentArea/ContentVBox/ChestArea"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "📦"
+
+[node name="ChestCount" type="Label" parent="ContentArea/ContentVBox/ChestArea"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.443, 0.502, 0.588, 1)
+text = "箱子: 0"
+
+[node name="ZoneLabel" type="Label" parent="ContentArea/ContentVBox/ChestArea"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+theme_override_colors/font_color = Color(0.443, 0.502, 0.588, 1)
+text = "区域Lv.1"
+
+[node name="QuantitySelector" type="OptionButton" parent="ContentArea/ContentVBox/ChestArea"]
+layout_mode = 2
+custom_minimum_size = Vector2(60, 30)
+
+[node name="OpenBtn" type="Button" parent="ContentArea/ContentVBox/ChestArea"]
+layout_mode = 2
+text = "开箱"
+
+[node name="UpgradeBtn" type="Button" parent="ContentArea/ContentVBox/ChestArea"]
+layout_mode = 2
+text = "升级区域"
+
+[node name="SkillInventoryPanel" type="VBoxContainer" parent="ContentArea/ContentVBox"]
+visible = false
+layout_mode = 2
+script = ExtResource("6_skill_panel")
+
+[node name="SlotsBar" type="HBoxContainer" parent="ContentArea/ContentVBox/SkillInventoryPanel"]
+layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 6
 
-[node name="Slot0" type="Button" parent="ContentArea/BattleArea/SkillSlots"]
+[node name="SkillHeader" type="HBoxContainer" parent="ContentArea/ContentVBox/SkillInventoryPanel"]
 layout_mode = 2
-custom_minimum_size = Vector2(44, 44)
-text = "🔥"
 
-[node name="Slot1" type="Button" parent="ContentArea/BattleArea/SkillSlots"]
-layout_mode = 2
-custom_minimum_size = Vector2(44, 44)
-text = "+"
-
-[node name="Slot2" type="Button" parent="ContentArea/BattleArea/SkillSlots"]
-layout_mode = 2
-custom_minimum_size = Vector2(44, 44)
-text = "+"
-
-[node name="Slot3" type="Button" parent="ContentArea/BattleArea/SkillSlots"]
-layout_mode = 2
-custom_minimum_size = Vector2(44, 44)
-text = "+"
-
-[node name="Slot4" type="Button" parent="ContentArea/BattleArea/SkillSlots"]
-layout_mode = 2
-custom_minimum_size = Vector2(44, 44)
-text = "+"
-
-[node name="StartBtn" type="Button" parent="ContentArea/BattleArea"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -60.0
-offset_top = -20.0
-offset_right = 60.0
-offset_bottom = 20.0
-text = "⚔ 开始战斗"
-
-[node name="EquipmentArea" type="Control" parent="ContentArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.0
-anchor_top = 0.62
-anchor_right = 0.55
-anchor_bottom = 1.0
-script = ExtResource("4_equipment_area")
-
-[node name="EquipTitle" type="Label" parent="ContentArea/EquipmentArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-offset_left = 6.0
-offset_top = 2.0
-offset_bottom = 20.0
-text = "🛡 装备"
-
-[node name="SlotGrid" type="GridContainer" parent="ContentArea/EquipmentArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.02
-anchor_top = 0.2
-anchor_right = 0.98
-anchor_bottom = 1.0
-columns = 5
-
-[node name="weapon" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "武器
-[空]"
-
-[node name="helmet" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "头盔
-[空]"
-
-[node name="armor" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "铠甲
-[空]"
-
-[node name="shoes" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "鞋子
-[空]"
-
-[node name="ring1" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "戒指1
-[空]"
-
-[node name="ring2" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "戒指2
-[空]"
-
-[node name="necklace" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "项链
-[空]"
-
-[node name="bracer" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "护腕
-[空]"
-
-[node name="belt" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "腰带
-[空]"
-
-[node name="gloves" type="Button" parent="ContentArea/EquipmentArea/SlotGrid"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-text = "手套
-[空]"
-
-[node name="ChestArea" type="Control" parent="ContentArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.57
-anchor_top = 0.62
-anchor_right = 1.0
-anchor_bottom = 1.0
-script = ExtResource("5_chest_area")
-
-[node name="ChestCount" type="Label" parent="ContentArea/ChestArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_right = 0.5
-offset_left = 4.0
-offset_top = 4.0
-offset_bottom = 22.0
-text = "📦 箱子: 0"
-
-[node name="ZoneLabel" type="Label" parent="ContentArea/ChestArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.5
-anchor_right = 1.0
-offset_top = 4.0
-offset_bottom = 22.0
-text = "📍 区域Lv.1"
-horizontal_alignment = 2
-
-[node name="OpenBtn" type="Button" parent="ContentArea/ChestArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.04
-anchor_top = 0.3
-anchor_right = 0.48
-anchor_bottom = 0.6
-text = "🎁 开箱"
-
-[node name="UpgradeBtn" type="Button" parent="ContentArea/ChestArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.52
-anchor_top = 0.3
-anchor_right = 0.96
-anchor_bottom = 0.6
-text = "⬆ 升级区域"
-
-[node name="QuantitySelector" type="OptionButton" parent="ContentArea/ChestArea"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.3
-anchor_top = 0.66
-anchor_right = 0.7
-anchor_bottom = 0.92
-
-[node name="ComparePopup" type="ColorRect" parent="ContentArea/ChestArea"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -140.0
-offset_top = -100.0
-offset_right = 140.0
-offset_bottom = 100.0
-color = Color(0.15, 0.15, 0.2, 0.95)
-visible = false
-
-[node name="Title" type="Label" parent="ContentArea/ChestArea/ComparePopup"]
-layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = 30.0
-text = "🎁 获得装备"
-horizontal_alignment = 1
-
-[node name="NewItemStats" type="Label" parent="ContentArea/ChestArea/ComparePopup"]
-layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-offset_left = 8.0
-offset_top = 34.0
-offset_right = -8.0
-offset_bottom = 80.0
-
-[node name="CurrentItemStats" type="Label" parent="ContentArea/ChestArea/ComparePopup"]
-layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-offset_left = 8.0
-offset_top = 84.0
-offset_right = -8.0
-offset_bottom = 130.0
-
-[node name="KeepBtn" type="Button" parent="ContentArea/ChestArea/ComparePopup"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.04
-anchor_top = 0.7
-anchor_right = 0.48
-anchor_bottom = 0.9
-text = "保留原装备"
-
-[node name="ReplaceBtn" type="Button" parent="ContentArea/ChestArea/ComparePopup"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.52
-anchor_top = 0.7
-anchor_right = 0.96
-anchor_bottom = 0.9
-text = "替换新装备"
-
-[node name="SkillInventoryPanel" type="Control" parent="ContentArea"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-script = ExtResource("6_skill_panel")
-
-[node name="SlotsBar" type="HBoxContainer" parent="ContentArea/SkillInventoryPanel"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.05
-anchor_top = 0.02
-anchor_right = 0.95
-anchor_bottom = 0.12
-alignment = 1
-theme_override_constants/separation = 8
-
-[node name="SkillHeader" type="HBoxContainer" parent="ContentArea/SkillInventoryPanel"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.04
-anchor_top = 0.14
-anchor_right = 0.96
-anchor_bottom = 0.22
-
-[node name="SkillCountLabel" type="Label" parent="ContentArea/SkillInventoryPanel/SkillHeader"]
+[node name="SkillCountLabel" type="Label" parent="ContentArea/ContentVBox/SkillInventoryPanel/SkillHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "技能列表 (0)"
 
-[node name="UpgradeAllBtn" type="Button" parent="ContentArea/SkillInventoryPanel/SkillHeader"]
+[node name="UpgradeAllBtn" type="Button" parent="ContentArea/ContentVBox/SkillInventoryPanel/SkillHeader"]
 layout_mode = 2
 text = "⬆ 统一升级"
 
-[node name="CloseBtn" type="Button" parent="ContentArea/SkillInventoryPanel/SkillHeader"]
+[node name="CloseBtn" type="Button" parent="ContentArea/ContentVBox/SkillInventoryPanel/SkillHeader"]
 layout_mode = 2
 text = "✕"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="ContentArea/SkillInventoryPanel"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.02
-anchor_top = 0.24
-anchor_right = 0.98
-anchor_bottom = 1.0
+[node name="ScrollContainer" type="ScrollContainer" parent="ContentArea/ContentVBox/SkillInventoryPanel"]
+layout_mode = 2
+size_flags_vertical = 3
 
-[node name="Grid" type="GridContainer" parent="ContentArea/SkillInventoryPanel/ScrollContainer"]
+[node name="Grid" type="GridContainer" parent="ContentArea/ContentVBox/SkillInventoryPanel/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 4
 
-[node name="ShopPanel" type="Control" parent="ContentArea"]
+[node name="ShopPanel" type="VBoxContainer" parent="ContentArea/ContentVBox"]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+layout_mode = 2
 script = ExtResource("7_shop_panel")
 
-[node name="ShopHeader" type="HBoxContainer" parent="ContentArea/ShopPanel"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.04
-anchor_top = 0.02
-anchor_right = 0.96
-anchor_bottom = 0.08
+[node name="ShopHeader" type="HBoxContainer" parent="ContentArea/ContentVBox/ShopPanel"]
+layout_mode = 2
 
-[node name="ShopTitle" type="Label" parent="ContentArea/ShopPanel/ShopHeader"]
+[node name="ShopTitle" type="Label" parent="ContentArea/ContentVBox/ShopPanel/ShopHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "🏪 商店"
 
-[node name="CloseBtn" type="Button" parent="ContentArea/ShopPanel/ShopHeader"]
+[node name="CloseBtn" type="Button" parent="ContentArea/ContentVBox/ShopPanel/ShopHeader"]
 layout_mode = 2
 text = "✕"
 
-[node name="Grid" type="GridContainer" parent="ContentArea/ShopPanel"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.04
-anchor_top = 0.1
-anchor_right = 0.96
-anchor_bottom = 1.0
+[node name="ScrollContainer" type="ScrollContainer" parent="ContentArea/ContentVBox/ShopPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Grid" type="GridContainer" parent="ContentArea/ContentVBox/ShopPanel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 columns = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
 [node name="LeaderboardPanel" type="Control" parent="."]
 visible = false
@@ -644,3 +408,56 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "🏆
 排行榜"
+
+[node name="ComparePopup" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.5)
+
+[node name="PopupPanel" type="PanelContainer" parent="ComparePopup"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.1
+anchor_top = 0.25
+anchor_right = 0.9
+anchor_bottom = 0.75
+
+[node name="VBox" type="VBoxContainer" parent="ComparePopup/PopupPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="ComparePopup/PopupPanel/VBox"]
+layout_mode = 2
+text = "🎁 开箱结果"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.424, 0.361, 0.906, 1)
+
+[node name="NewItemStats" type="Label" parent="ComparePopup/PopupPanel/VBox"]
+layout_mode = 2
+text = "🆕 新装备"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+
+[node name="CurrentItemStats" type="Label" parent="ComparePopup/PopupPanel/VBox"]
+layout_mode = 2
+text = "当前: [空]"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+
+[node name="BtnRow" type="HBoxContainer" parent="ComparePopup/PopupPanel/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="KeepBtn" type="Button" parent="ComparePopup/PopupPanel/VBox/BtnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "保留原装备"
+
+[node name="ReplaceBtn" type="Button" parent="ComparePopup/PopupPanel/VBox/BtnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "替换新装备"

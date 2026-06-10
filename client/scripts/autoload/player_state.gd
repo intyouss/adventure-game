@@ -1,5 +1,4 @@
-﻿# PlayerState - Client-side player data cache
-class_name PlayerState
+# PlayerState - Client-side player data cache
 extends Node
 
 var character: Dictionary = {}

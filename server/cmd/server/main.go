@@ -243,14 +243,25 @@ func main() {
 
 						if planBResult.Passed {
 							// Settle: update stage progress and grant rewards
+							if planBResult.Rewards != nil {
+								if _, err := stageSvc.ClaimRewards(context.Background(), charID, summary.StageID); err != nil {
+									slog.Error("battle settle claim rewards failed", "character_id", charID, "stage_id", summary.StageID, "error", err)
+								} else {
+									slog.Info("battle settled", "character_id", charID, "stage_id", summary.StageID)
+								}
+							}
+							// Update leaderboard
+							if err := leaderboardSvc.UpdateScore(context.Background(), charID, chapter, level); err != nil {
+								slog.Error("leaderboard update failed", "character_id", charID, "error", err)
+							}
 							settleResp, _ := json.Marshal(map[string]interface{}{
 								"type": "battle_settled",
 								"payload": map[string]interface{}{
-									"stage_id":  summary.StageID,
-									"chapter":   chapter,
-									"level":     level,
-									"passed":    true,
-									"rewards":   planBResult.Rewards,
+									"stage_id": summary.StageID,
+									"chapter":  chapter,
+									"level":    level,
+									"passed":   true,
+									"rewards":  planBResult.Rewards,
 								},
 							})
 							conn.WriteMessage(websocket.TextMessage, settleResp)
@@ -272,7 +283,11 @@ func main() {
 func parseStageFromID(stageID string) (int, int) {
 	var chapter, level int
 	fmt.Sscanf(stageID, "%d-%d", &chapter, &level)
-	if chapter < 1 { chapter = 1 }
-	if level < 1 { level = 1 }
+	if chapter < 1 {
+		chapter = 1
+	}
+	if level < 1 {
+		level = 1
+	}
 	return chapter, level
 }

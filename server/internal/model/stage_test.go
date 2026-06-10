@@ -1,4 +1,4 @@
-﻿package model
+package model
 
 import "testing"
 
@@ -32,13 +32,16 @@ func TestGenerateStageConfigScaling(t *testing.T) {
 
 func TestCalculateRewards(t *testing.T) {
 	r := CalculateRewards(1, 1)
-	if r.Gold <= 0 || r.SkillTickets <= 0 || r.Chests <= 0 {
-		t.Error("Rewards should all be positive")
+	if r.Gold != 0 {
+		t.Error("Stage rewards should not give gold (gold only from decompose)")
+	}
+	if r.SkillTickets <= 0 || r.Chests <= 0 {
+		t.Error("SkillTickets and Chests should be positive")
 	}
 
 	rBoss := CalculateRewards(1, 10)
-	if rBoss.Gold <= r.Gold {
-		t.Error("Boss level should give more gold")
+	if rBoss.SkillTickets <= r.SkillTickets {
+		t.Error("Boss level should give more skill tickets")
 	}
 	if rBoss.Chests < r.Chests {
 		t.Error("Boss level should give more chests")

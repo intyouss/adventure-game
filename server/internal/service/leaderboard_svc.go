@@ -29,13 +29,14 @@ func (s *LeaderboardService) leaderboardKey(chapter int) string {
 
 // RankingEntry represents a leaderboard ranking row.
 type RankingEntry struct {
-	Rank        int    `json:"rank"`
-	CharacterID int64  `json:"character_id"`
-	Nickname    string `json:"nickname"`
-	Level       int    `json:"level"`
-	Chapter     int    `json:"chapter"`
-	StageLevel  int    `json:"stage_level"`
-	CP          int64  `json:"cp"`
+	Rank         int     `json:"rank"`
+	CharacterID  int64   `json:"character_id"`
+	Nickname     string  `json:"nickname"`
+	Level        int     `json:"level"`
+	Chapter      int     `json:"chapter"`
+	StageLevel   int     `json:"stage_level"`
+	StageChapter int     `json:"stage_chapter"`
+	CP           float64 `json:"cp"`
 }
 
 // UpdateScore updates a player's score on the leaderboard.
@@ -121,7 +122,7 @@ func (s *LeaderboardService) GetTopN(ctx context.Context, page, size, chapter in
 		entry := RankingEntry{
 			Rank:        int(start) + i + 1,
 			CharacterID: charID,
-			CP:          int64(z.Score),
+			CP:          z.Score,
 		}
 
 		if err == nil && len(meta) > 0 {
@@ -150,9 +151,9 @@ func (s *LeaderboardService) GetTopN(ctx context.Context, page, size, chapter in
 	return entries, total, nil
 }
 
-// GetRank returns a player's full ranking entry.
-func (s *LeaderboardService) GetRank(ctx context.Context, charID int64) (*RankingEntry, error) {
-	rank, err := s.rdb.ZRevRank(ctx, s.leaderboardKey(0), strconv.FormatInt(charID, 10)).Result()
+// GetRank returns a player's full ranking entry for a given chapter (0 = global).
+func (s *LeaderboardService) GetRank(ctx context.Context, charID int64, chapter int) (*RankingEntry, error) {
+	rank, err := s.rdb.ZRevRank(ctx, s.leaderboardKey(chapter), strconv.FormatInt(charID, 10)).Result()
 	if err == redis.Nil {
 		return &RankingEntry{Rank: 0}, nil
 	}
@@ -180,15 +181,16 @@ func (s *LeaderboardService) GetRank(ctx context.Context, charID int64) (*Rankin
 		CritDmg:  base.CritDmg,
 		AtkSpeed: base.AtkSpeed,
 	}
-	cp := int64(model.CalcCP(stats, char.Level))
+	cp := model.CalcCP(stats, char.Level)
 
 	return &RankingEntry{
-		Rank:        int(rank) + 1,
-		CharacterID: charID,
-		Nickname:    char.Nickname,
-		Level:       char.Level,
-		Chapter:     char.StageChapter,
-		StageLevel:  char.StageLevel,
-		CP:          cp,
+		Rank:         int(rank) + 1,
+		CharacterID:  charID,
+		Nickname:     char.Nickname,
+		Level:        char.Level,
+		Chapter:      char.StageChapter,
+		StageLevel:   char.StageLevel,
+		StageChapter: char.StageChapter,
+		CP:           cp,
 	}, nil
 }

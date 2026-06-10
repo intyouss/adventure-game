@@ -1,5 +1,4 @@
-﻿# AudioManager - Audio playback control
-class_name AudioManager
+# AudioManager - Audio playback control
 extends Node
 
 var _enabled: bool = true
